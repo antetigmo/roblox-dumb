@@ -1,0 +1,45 @@
+local Button = {}
+Button.__index = Button
+
+Button.NumberOfInstances = 0
+
+function Button.new(object, instanceTool)
+	Button.NumberOfInstances += 1
+	local self = setmetatable({}, Button)
+	self.Object = object
+
+	self.InstanceTool = instanceTool
+	self.BoxPath = self.Object:GetBox(self.InstanceTool)
+	self.Box = self.BoxPath.Box
+
+	return self
+end
+
+function Button:Init()	
+	self.Prompt = self.Box.Base.Attachment:FindFirstChild("ProximityPrompt") or self:CreatePrompt() 
+	self.Prompt.Triggered:Connect(function(...)
+		self:Press(...)
+	end)
+
+	self.Subscription = self.Object:SubscribeTopic("BoxDropped", function(...)
+		self.Prompt = self:CreatePrompt(...)
+		self.Prompt.Triggered:Connect(function(...)		
+			self:Press(...)
+		end)
+	end)
+end
+
+function Button:CreatePrompt()
+	local Prompt = Instance.new("ProximityPrompt")
+	Prompt.HoldDuration = 0.5
+	Prompt.Parent = self.Box.Base.Attachment
+
+	return Prompt
+end
+
+function Button:Press(player)		
+	self.Object:SetBox(player, self.Box)		
+	self.Prompt:Destroy()
+end
+
+return Button
