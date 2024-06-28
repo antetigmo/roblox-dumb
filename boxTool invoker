@@ -1,0 +1,10 @@
+local PlayersService = game:GetService("Players")
+local ServerStorage = game:GetService("ServerStorage")
+
+local boxToolModule = require(ServerStorage.boxTool)
+
+PlayersService.PlayerAdded:Connect(function(player)
+	repeat task.wait() until player.CharacterAdded:Wait()
+	local boxToolObj = boxToolModule.new(player)
+	boxToolObj:Init()	
+end)
