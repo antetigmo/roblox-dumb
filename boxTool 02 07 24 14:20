@@ -1,0 +1,156 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ServerStorage= game:GetService("ServerStorage")
+local PlayersService = game:GetService("Players")
+local CollectionService = game:GetService("CollectionService")
+
+local ClientToServer = ReplicatedStorage.ClientToServer
+local ServerToClient = ReplicatedStorage.ServerToClient
+
+local componentFolder =  ServerStorage.Components
+
+local boxTool = {}
+boxTool.__index = boxTool
+boxTool.NumberOfInstances = 0
+
+boxTool.objectInstance = {}
+boxTool.toolInstance = {}
+
+function boxTool.new(player)
+	local self = setmetatable({}, boxTool)
+	self.Picked = false
+	
+
+	boxTool.NumberOfInstances += 1
+	self.InstanceID = boxTool.NumberOfInstances
+	
+	self.player = player
+
+	self._topicEvent = Instance.new("BindableEvent")
+
+	ClientToServer.OnServerEvent:Connect(function(player)
+		self:OnClientToServer(player)
+	end)
+	
+	print("Created boxTool instance:", self.InstanceID, "for player:", player.Name)
+
+	return self
+end
+
+function boxTool:Init()
+	local boxFolder = game.Workspace.Boxes.Tools:GetChildren()
+
+	for i, boxes in ipairs(boxFolder) do
+		boxTool.toolInstance[i] = boxes
+	end
+	
+	self:AddAll()
+end
+
+--Remote/BindableEvents Events 
+
+function boxTool:OnClientToServer(player, ...)
+	if player == self.player then
+		print("======")
+		print("OnClientToServer called for player:", player.Name, "on boxTool instance:", self.InstanceID)
+		print(player, self.player, "==Thats the player given by the ClientToServer, compared to the instance.")
+		self:Drop(player)
+	end
+end
+
+--Box Functions
+
+function boxTool:SetBox(player, box)
+	self.Picked = true
+	local boxInfo = self:GetBox(box)
+	self.Box = boxInfo.Box
+
+	box.Parent = player.Backpack
+end
+
+function boxTool:GetBox(boxObject)
+
+	local boxInfo = {}
+	boxInfo.boxIndex = table.find(boxTool.toolInstance, boxObject)
+	boxInfo.boxObject = boxObject
+	boxInfo.Box = boxTool.toolInstance[boxInfo.boxIndex]
+
+	return boxInfo
+end
+
+function boxTool:Drop(player)
+	local box = self.Box
+	print("======")
+	print(self.InstanceID, "--Instance of: " .. player.Name .. " printed.")
+	print("Thats the box in this instance:")
+	print(box)
+	
+	local charCFrame = player.Character:FindFirstChild("HumanoidRootPart").CFrame
+
+	if box and self.Picked then	
+		self.Picked = false
+
+		box.Parent = self.player
+		box.Base.CFrame = charCFrame * CFrame.new(0,0,-8) * CFrame.Angles(math.rad(180),0,0)
+		box.Parent = game.Workspace	
+
+		self:PublishTopic("BoxDropped", box)
+	
+		self.Box = nil
+		return box
+	else
+		self.Picked = false
+		--print("No box to drop")	
+		return nil
+	end	
+end
+
+--ADD AND INIT COMPONENTS
+
+function boxTool:AddButton(instance)
+	self:CreateComponent(instance, componentFolder.Button)
+end
+
+function boxTool:AddAll()
+	for _, instance in boxTool.toolInstance do
+		if CollectionService:HasTag(instance, "Button") then
+			self:AddComponents(instance)
+		end
+	end
+end
+
+function boxTool:AddComponents(instance)
+	for _, tag in CollectionService:GetTags(instance) do
+		local component = componentFolder:FindFirstChild(tag)
+		if component then
+			self:CreateComponent(instance, component)
+		end
+	end	
+end
+
+function boxTool:CreateComponent(instance, componentScript)
+	local compModule = require(componentScript)
+	local newComp = compModule.new(self, instance)
+	self.Components = {}
+	self.Components[newComp] = instance
+	
+	newComp:Init()
+end
+
+---------
+
+function boxTool:PublishTopic(topicName, ...)
+	self._topicEvent:Fire(topicName, ...)	
+	--print("Published topic: " .. topicName)
+end
+
+function boxTool:SubscribeTopic(topicName, callBack)
+	local connection = self._topicEvent.Event:Connect(function(name, ...)
+		if name == topicName then
+			callBack(...)
+		end
+	end)
+	return connection
+end
+
+--Remote Events
+return boxTool
