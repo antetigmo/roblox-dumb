@@ -1,0 +1,71 @@
+local Button = {}
+Button.__index = Button
+
+Button.NumberOfInstances = 0
+
+function Button.new(object, instanceTool)
+	Button.NumberOfInstances += 1
+	
+	local self = setmetatable({}, Button)
+	self.InstanceID = Button.NumberOfInstances
+	self.Object = object
+
+	self.InstanceTool = instanceTool
+	self.BoxPath = self.Object:GetBox(self.InstanceTool)
+	self.Box = self.BoxPath.Box
+
+	print("Created Button instance:", self.InstanceID, "for object instance:", self.Object.InstanceID, "with box:", self.Box)
+	return self
+end
+
+function Button:Init()	
+	print(self.Object.Components)
+	
+	-- First prompt creation
+	self.Prompt = self.Box.Base.Attachment:FindFirstChild("ProximityPrompt") or self:CreatePrompt() 
+
+	self.Connection = self.Prompt.Triggered:Connect(function(...)
+		if ... == self.Object.player then
+			self:Press(...)
+		end
+	end)	
+
+	self.Subscription = self.Object:SubscribeTopic("BoxDropped", function(...)
+		local boxIndex = self.Object:GetBox(...).boxIndex
+		if self.BoxPath.boxIndex == boxIndex then
+			self:Trigger(...)
+		end	
+	end)
+end
+
+function Button:Trigger(box)
+	print("Trigger")
+	print(self.Object)
+	self.Prompt = self:CreatePrompt()
+	self.Connection = self.Prompt.Triggered:Connect(function(...)
+		self:Press(...)
+	end)		
+end
+
+function Button:CreatePrompt()
+	local Prompt = Instance.new("ProximityPrompt")
+	Prompt.HoldDuration = 0.5
+	Prompt.Parent = self.Box.Base.Attachment
+
+	return Prompt
+end
+
+function Button:Press(player)
+	print("Press called by player:", player.Name, "on Button instance:", self.InstanceID, "associated with object instance:", self.Object.InstanceID)
+	if self.Object.player ~= player then
+		print("Ignored press from player:", player.Name)
+		return
+	end
+	
+	self.Connection:Disconnect()
+	self.Prompt:Destroy()
+	self.Object:SetBox(player, self.Box)	
+
+end
+
+return Button
