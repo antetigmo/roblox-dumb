@@ -1,0 +1,8 @@
+local UserInputService = game:GetService("UserInputService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+UserInputService.InputBegan:Connect(function(input)
+	if input.KeyCode == Enum.KeyCode.Backspace then
+		ReplicatedStorage.ClientToServer:FireServer()
+	end
+end)
