@@ -1,0 +1,86 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ClientToServer = ReplicatedStorage.ClientToServer
+
+local Button = {}
+Button.__index = Button
+
+
+Button.NumberOfInstances = 0
+
+function Button.new(object, instanceTool)
+	Button.NumberOfInstances += 1
+
+	local self = setmetatable({}, Button)
+	self.InstanceID = Button.NumberOfInstances
+	self.ModuleNameAndID = "Button, ID: " .. tostring(self.InstanceID)
+	
+	self.Object = object
+	self._topicEvent = Instance.new("BindableEvent")
+
+	self.InstanceTool = instanceTool
+	self.BoxPath = self.Object:GetBox(self.InstanceTool)
+	self.Box = self.BoxPath.Box
+	
+	print(" ")
+	print("Created Button instance:", self.InstanceID, "for object instance:", self.Object.InstanceID, "with box:", self.Box)
+	
+	return self
+end
+
+function Button:Init()
+	self.Prompt = self.Box.Base.Attachment:FindFirstChild("ProximityPrompt") or self:CreatePrompt() 
+	
+	self.Connection = self.Prompt.Triggered:Connect(function(...)
+		print("First prompt trigger made by player:",self.Object.player,"; id:",self.Object.InstanceID)
+		if ... == self.Object.player then
+			print("====== FUNCTION Init from Button. player", ..., "using object number:", self.Object.InstanceID,"activacted trigger from:", self.Prompt)
+			self:Press(...)
+		end
+		self.Connection:Disconnect()
+		print("First box connection disconnected, was picked and probably will be dropped(handled by the event onBoxDropped).")
+		print("Notification by instanceID:", self.Object.InstanceID)
+	end)	
+
+	self.Subscription = self.Object:SubscribeTopic("BoxDropped", function(player, ...)
+		print("BoxDropped subscription received.")
+
+		local boxIndex = self.Object:GetBox(...).boxIndex
+		if self.BoxPath.boxIndex == boxIndex then
+			print(player)
+			self:OnBoxDropped(player, ...)
+		end	
+	end)
+end
+
+function Button:ClientToServer()
+	ClientToServer:Connect(function(player, ...)
+		print(player, ...)
+	end)
+end
+
+function Button:OnBoxDropped(player)
+	self.Prompt = self.Box.Base.Attachment:FindFirstChild("ProximityPrompt") or self:CreatePrompt() 
+	self.Connection = self.Prompt.Triggered:Connect(function(player)
+		print("BoxDropped trigger;")
+		self:Press(player)
+		print("OnBoxDropped event triggered for:", self.Object, "from player:", player)
+	end)	
+end
+
+function Button:CreatePrompt()
+	local Prompt = Instance.new("ProximityPrompt")
+	Prompt.HoldDuration = 0.5
+	Prompt.Parent = self.Box.Base.Attachment
+
+	return Prompt
+end
+
+function Button:Press(player)
+	print("===== FUNCTION, Press ======")
+	print(player.Name, ", on Button instance:", self.InstanceID, "associated with object instance:", self.Object.InstanceID)
+	self.Connection:Disconnect()
+	self.Prompt:Destroy()
+	self.Object:SetBox(player, self.Box)	
+end
+
+return Button
