@@ -1,0 +1,55 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local TopicEvent = ReplicatedStorage.TopicEvent
+local ServerToClient = ReplicatedStorage.ServerToClient
+local ServerToServer = ReplicatedStorage.ServerToServer
+
+local Button = {}
+Button.__index = Button
+
+Button.NumberOfInstances = 0
+
+function Button.new(object, instanceTool)
+	Button.NumberOfInstances += 1
+
+	local self = setmetatable({}, Button)
+	self.InstanceID = Button.NumberOfInstances
+	self.ModuleNameAndID = "Button, ID: " .. tostring(self.InstanceID)
+	
+	self.Object = object
+	self._topicEvent = Instance.new("BindableEvent")
+
+	self.InstanceTool = instanceTool
+	self.BoxPath = self.Object:GetBox(self.InstanceTool)
+	self.Box = self.BoxPath.Box
+	
+	print(" ")
+	print("Created Button instance:", self.InstanceID, "for object instance:", self.Object.InstanceID, "with box:", self.Box)
+	
+	return self
+end
+
+function Button:Init()
+	self.Prompt = self.Box.Base.Attachment:FindFirstChild("ProximityPrompt")
+	
+	self.Connection = self.Prompt.Triggered:Connect(function(...)
+		if ... == self.Object.player then
+			self:Press(...)
+		end
+	end)	
+end
+
+function Button:Press(player)
+	if player == self.Object.player then
+		print(player.Name, ", on Button instance:", self.InstanceID, "associated with object instance:", self.Object.InstanceID)
+		self.Connection:Disconnect()
+		self.Prompt:Destroy()
+		self.Object:SetBox(player, self.Box)
+		self.Object.boxData:PublishTopic("BoxAssignedTo", player, self.Box)
+	else
+		self.Connection:Disconnect()
+		self.Prompt:Destroy()
+	end
+end
+
+return Button
