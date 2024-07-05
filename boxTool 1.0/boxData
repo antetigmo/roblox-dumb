@@ -1,0 +1,76 @@
+local boxData = {}
+boxData.__index = boxData
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ServerStorage= game:GetService("ServerStorage")
+local PlayersService = game:GetService("Players")
+local CollectionService = game:GetService("CollectionService")
+
+local ServerToClient = ReplicatedStorage.ServerToClient
+local ServerToServer = ReplicatedStorage.ServerToServer
+
+local boxFolder = game.Workspace.Boxes.Tools:GetChildren()
+local boxesUsed = {}
+local toolsFolder = {}
+
+function boxData.new(object, player)
+	local self = setmetatable({}, boxData)
+	self.object = object
+	self.player = player
+	self._topicEvent = ReplicatedStorage.TopicEvent
+	
+	self.Debounce = false
+	print("boxData created.")
+	
+	return self
+end
+
+function boxData:Init()
+	self:CreatePrompt()
+
+	self.Connection = self:SubscribeTopic("BoxAssignedTo", function(player, ...)
+		self:OnBoxAssignedTo(player, ...)
+	end)
+end
+
+function boxData:OnBoxAssignedTo(player, box)
+	boxesUsed[tostring(player)] = {player, box}
+	print(boxesUsed)
+end
+
+function boxData:CreatePrompt(box)
+	if self.Debounce == false then
+		self.Debounce = true
+		for i, boxes in ipairs(boxFolder) do
+			toolsFolder[i] = boxes
+
+			local Prompt = Instance.new("ProximityPrompt")
+			Prompt.HoldDuration = 0.5
+			Prompt.Parent =  toolsFolder[i].Base.Attachment
+		end
+	else
+
+	end
+end
+
+function boxData:PublishTopic(topicName, player, ...)
+	self._topicEvent:Fire(topicName, self.player, ...)	
+	--print("Published topic: " .. topicName)
+end
+
+function boxData:SubscribeTopic(topicName, callBack)
+	local connection = self._topicEvent.Event:Connect(function(name, player, ...)
+		if name == topicName then
+			callBack(player, ...)
+		end
+	end)
+	return connection
+end
+
+--local serverRemote = ServerToServer.Event:Connect(function(player, box)
+	--print("BoxDropped subscription received.")
+
+
+--end)
+
+return boxData
