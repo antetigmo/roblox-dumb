@@ -1,7 +1,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerStorage= game:GetService("ServerStorage")
 local PlayersService = game:GetService("Players")
-local CollectionService = game:GetService("CollectionService")
+local CollectionService = game:GetService("CollectionService"
 
 local ClientToServer = ReplicatedStorage.ClientToServer
 local ServerToClient = ReplicatedStorage.ServerToClient
