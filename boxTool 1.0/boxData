@@ -15,7 +15,7 @@ local toolsFolder = {}
 
 function boxData.new(object, player)
 	local self = setmetatable({}, boxData)
-	self.object = object
+	self.Object = object
 	self.player = player
 	self._topicEvent = ReplicatedStorage.TopicEvent
 	
@@ -31,25 +31,45 @@ function boxData:Init()
 	self.Connection = self:SubscribeTopic("BoxAssignedTo", function(player, ...)
 		self:OnBoxAssignedTo(player, ...)
 	end)
+	
+	self.BoxDroppedEvent = self.Object:SubscribeTopic("BoxDropped", function(player, Box)
+		self:OnBoxDropped(player, Box)
+	end) 
+end
+
+function boxData:OnBoxDropped(player, Box)
+	local Prompt = Box.Base.Attachment:FindFirstChild("ProximityPrompt") or self:CreatePrompt(Box, player) 
 end
 
 function boxData:OnBoxAssignedTo(player, box)
-	boxesUsed[tostring(player)] = {player, box}
+	boxesUsed[player.Name] = {player, box}
 	print(boxesUsed)
 end
 
-function boxData:CreatePrompt(box)
+function boxData:CreatePrompt(box, player)
+	local Box = box
 	if self.Debounce == false then
 		self.Debounce = true
 		for i, boxes in ipairs(boxFolder) do
 			toolsFolder[i] = boxes
 
-			local Prompt = Instance.new("ProximityPrompt")
+			Box = boxes
+			local Prompt = Box.Base.Attachment:FindFirstChild("ProximityPrompt") or Instance.new("ProximityPrompt")
 			Prompt.HoldDuration = 0.5
 			Prompt.Parent =  toolsFolder[i].Base.Attachment
 		end
 	else
+		local Prompt = Box.Base.Attachment:FindFirstChild("ProximityPrompt") or Instance.new("ProximityPrompt")
+		Prompt.HoldDuration = 0.5
+		Prompt.Parent = Box.Base.Attachment
+		
+		local boxInfo = self.Object:GetBox(Box)
 
+		table.remove(boxesUsed[player.Name], 2)
+		print("Removed box:", Box,"from player:", player, boxesUsed[player.Name], "array.")
+		warn(boxesUsed)
+	
+		return Prompt
 	end
 end
 
