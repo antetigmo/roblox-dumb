@@ -13,7 +13,6 @@ local boxTool = {}
 boxTool.__index = boxTool
 boxTool.NumberOfInstances = 0
 
-boxTool.objectInstance = {}
 boxTool.toolInstance = {}
 
 function boxTool.new(player)
@@ -34,7 +33,7 @@ function boxTool.new(player)
 	end)
 
 	warn("Created boxTool instance:", self.InstanceID, "for player:", player.Name)
-
+	
 	return self
 end
 
