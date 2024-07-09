@@ -1,84 +1,147 @@
-local boxData = {}
-boxData.__index = boxData
-
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerStorage= game:GetService("ServerStorage")
 local PlayersService = game:GetService("Players")
 local CollectionService = game:GetService("CollectionService")
 
+local ClientToServer = ReplicatedStorage.ClientToServer
 local ServerToClient = ReplicatedStorage.ServerToClient
 local ServerToServer = ReplicatedStorage.ServerToServer
 
-local boxFolder = game.Workspace.Boxes.Tools:GetChildren()
-local boxesUsed = {}
-local toolsFolder = {}
+local componentFolder =  ServerStorage.Components
 
-function boxData.new(object, player)
-	local self = setmetatable({}, boxData)
-	self.Object = object
-	self.player = player
-	self._topicEvent = ReplicatedStorage.TopicEvent
+local boxTool = {}
+boxTool.__index = boxTool
+boxTool.NumberOfInstances = 0
+
+boxTool.toolInstance = {}
+
+function boxTool.new(player)
+	boxTool.NumberOfInstances += 1
 	
-	self.Debounce = false
-	print("boxData created.")
+	local self = setmetatable({}, boxTool)
+	self.player = player
+	self.Picked = false
+	self._topicEvent = Instance.new("BindableEvent")
+
+	self.InstanceID = boxTool.NumberOfInstances
+	self.Components = {}
+
+	ClientToServer.OnServerEvent:Connect(function(player)
+		if player == self.player then
+			self:OnClientToServer(player)
+		end
+	end)
+
+	warn("Created boxTool instance:", self.InstanceID, "for player:", player.Name)
 	
 	return self
 end
 
-function boxData:Init()
-	self:CreatePrompt()
+function boxTool:Init()
+	local boxFolder = game.Workspace.Boxes.Tools:GetChildren()
+	for i, boxes in ipairs(boxFolder) do
+		boxTool.toolInstance[i] = boxes
+	end
 
-	self.Connection = self:SubscribeTopic("BoxAssignedTo", function(player, ...)
-		self:OnBoxAssignedTo(player, ...)
-	end)
+	local boxData = ServerStorage.Components.boxData
+	self.boxData = self:AddComponentOnBoxTool(boxData)
+
+	self:AddAll()
+end
+
+--Remote/BindableEvents Events 
+
+function boxTool:OnClientToServer(player, ...)
+	self:Drop(player)
+end
+
+--Box Functions
+
+function boxTool:SetBox(player, box)
+	self.Picked = true
+	local boxInfo = self:GetBox(box)
+	self.Box = boxInfo.Box
+
+	box.Parent = player.Backpack
+end
+
+function boxTool:GetBox(boxObject)
+	local boxInfo = {}
+	boxInfo.boxIndex = table.find(boxTool.toolInstance, boxObject)
+	boxInfo.boxObject = boxObject
+	boxInfo.Box = boxTool.toolInstance[boxInfo.boxIndex]
 	
-	self.BoxDroppedEvent = self.Object:SubscribeTopic("BoxDropped", function(player, Box)
-		self:OnBoxDropped(player, Box)
-	end) 
+	return boxInfo
 end
 
-function boxData:OnBoxDropped(player, Box)
-	local Prompt = Box.Base.Attachment:FindFirstChild("ProximityPrompt") or self:CreatePrompt(Box, player) 
-end
+function boxTool:Drop(player)
+	local charCFrame = player.Character:FindFirstChild("HumanoidRootPart").CFrame
 
-function boxData:OnBoxAssignedTo(player, box)
-	boxesUsed[player.Name] = {player, box}
-	print(boxesUsed)
-end
+	if self.Picked and player == self.player then	
+		self.Picked = false
 
-function boxData:CreatePrompt(box, player)
-	local Box = box
-	if self.Debounce == false then
-		self.Debounce = true
-		for i, boxes in ipairs(boxFolder) do
-			toolsFolder[i] = boxes
+		self.Box.Parent = self.player
+		self.Box.Base.CFrame = charCFrame * CFrame.new(0,0,-8) * CFrame.Angles(math.rad(180),0,0)
+		self.Box.Parent = game.Workspace	
 
-			Box = boxes
-			local Prompt = Box.Base.Attachment:FindFirstChild("ProximityPrompt") or Instance.new("ProximityPrompt")
-			Prompt.HoldDuration = 0.5
-			Prompt.Parent =  toolsFolder[i].Base.Attachment
-		end
+		self:PublishTopic("BoxDropped", player, self.Box)
+		--print("Remote event, BoxDropped Published")
+
+		self.Box = nil
+		return self.Box
 	else
-		local Prompt = Box.Base.Attachment:FindFirstChild("ProximityPrompt") or Instance.new("ProximityPrompt")
-		Prompt.HoldDuration = 0.5
-		Prompt.Parent = Box.Base.Attachment
-		
-		local boxInfo = self.Object:GetBox(Box)
+		self.Picked = false
+		return nil
+	end	
+end
 
-		table.remove(boxesUsed[player.Name], 2)
-		print("Removed box:", Box,"from player:", player, boxesUsed[player.Name], "array.")
-		warn(boxesUsed)
-	
-		return Prompt
+--ADD AND INIT COMPONENTS
+
+function boxTool:AddComponentOnBoxTool(componentScript)
+	local compModule = require(componentScript)
+	local newComp = compModule.new(self, self.player)
+	newComp:Init()
+
+	return newComp
+end
+
+function boxTool:AddButton(instance)
+	self:CreateComponent(instance, componentFolder.Button)
+end
+
+function boxTool:AddAll()
+	for _, instance in boxTool.toolInstance do
+		if CollectionService:HasTag(instance, "Button") then
+			self:AddComponents(instance)
+		end
 	end
 end
 
-function boxData:PublishTopic(topicName, player, ...)
+function boxTool:AddComponents(instance)
+	for _, tag in CollectionService:GetTags(instance) do
+		local component = componentFolder:FindFirstChild(tag)
+		if component then
+			self:CreateComponent(instance, component)
+		end
+	end	
+end
+
+function boxTool:CreateComponent(instance, componentScript)
+	local compModule = require(componentScript)
+	local newComp = compModule.new(self, instance)
+	newComp:Init()
+	
+	self.Components[newComp.ModuleNameAndID] = newComp
+end
+
+---------
+
+function boxTool:PublishTopic(topicName, player, ...)
 	self._topicEvent:Fire(topicName, self.player, ...)	
 	--print("Published topic: " .. topicName)
 end
 
-function boxData:SubscribeTopic(topicName, callBack)
+function boxTool:SubscribeTopic(topicName, callBack)
 	local connection = self._topicEvent.Event:Connect(function(name, player, ...)
 		if name == topicName then
 			callBack(player, ...)
@@ -87,10 +150,7 @@ function boxData:SubscribeTopic(topicName, callBack)
 	return connection
 end
 
---local serverRemote = ServerToServer.Event:Connect(function(player, box)
-	--print("BoxDropped subscription received.")
+warn("version 1.1")
 
-
---end)
-
-return boxData
+--Remote Events
+return boxTool
