@@ -67,7 +67,7 @@ local hasBox
 		self.Object:SetBox(player, self.Box)
 
 	elseif player == self.Object.player and self.Object.Picked then
-		warn("Player already has a box.")
+		warn("Player:",player ,"already has a box.")
 	else
 		self.Connection:Disconnect()
 		self.Prompt:Destroy()
