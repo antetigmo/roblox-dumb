@@ -81,7 +81,7 @@ function boxTool:Drop(player)
 		self.Picked = false
 
 		self.Box.Parent = self.player
-		self.Box.Base.CFrame = charCFrame * CFrame.new(0,0,-8) * CFrame.Angles(math.rad(180),0,0)
+		self.Box.Base.CFrame = charCFrame * CFrame.new(0,2,-8) * CFrame.Angles(math.rad(180),0,0)
 		self.Box.Parent = game.Workspace	
 
 		self:PublishTopic("BoxDropped", player, self.Box)
