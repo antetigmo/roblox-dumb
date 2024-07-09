@@ -1,0 +1,33 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ServerStorage= game:GetService("ServerStorage")
+local PlayersService = game:GetService("Players")
+local CollectionService = game:GetService("CollectionService")
+
+local ClientToServer = ReplicatedStorage.ClientToServer
+local ServerToClient = ReplicatedStorage.ServerToClient
+local ServerToServer = ReplicatedStorage.ServerToServer
+
+local item = {}
+item.__index = item
+
+function item.new(obj, itemObject)
+	local self = setmetatable({}, item)
+	self.object = obj
+	self.itemObject = itemObject
+	
+	return self
+end
+
+function item:Init()
+	self:CreatePrompt(self.itemObject.Attachment)
+end
+
+function item:CreatePrompt(item)
+	local Prompt = Instance.new("ProximityPrompt")
+	Prompt.HoldDuration = 0.5
+	Prompt.Parent = item
+	
+	return Prompt
+end
+
+return item
