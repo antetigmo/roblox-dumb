@@ -15,32 +15,32 @@ function Button.new(object, instanceTool)
 	local self = setmetatable({}, Button)
 	self.InstanceID = Button.NumberOfInstances
 	self.ModuleNameAndID = "Button, ID: " .. tostring(self.InstanceID)
-	
+
 	self.Object = object
 	self._topicEvent = Instance.new("BindableEvent")
 
 	self.InstanceTool = instanceTool
 	self.BoxPath = self.Object:GetBox(self.InstanceTool)
 	self.Box = self.BoxPath.Box
-	
+
 	print(" ")
 	print("Created Button instance:", self.InstanceID, "for object instance:", self.Object.InstanceID, "with box:", self.Box)
-	
+
 	return self
 end
 
 function Button:Init()
 	self.Prompt = self.Box.Base.Attachment:FindFirstChild("ProximityPrompt")
-	
+
 	self.Connection = self.Prompt.Triggered:Connect(function(player)
 		if player == self.Object.player then
 			self:Press(player)
 		end
 	end)
-	
+
 	self.Subscription = ServerToServer.Event:Connect(function(player, box)
 		warn("OnBoxDropped event triggered for:", self.Object, "from player:", player)
-		
+
 		local boxIndex = self.Object:GetBox(box).boxIndex
 		if self.BoxPath.boxIndex == boxIndex then
 			self.Prompt = box.Base.Attachment:WaitForChild("ProximityPrompt")
@@ -52,15 +52,22 @@ function Button:Init()
 end
 
 function Button:Press(player)
-	local hasBox = self.Object.boxData.boxUsed[player.Name]
 	
-	if player == self.Object.player then
+local hasBox
+	
+	if player == self.Object.player and not self.Object.Picked then
+		self.Object.boxData:PublishTopic("BoxAssignedTo", player, self.Box)
 		print(player, ", on Button instance:", self.InstanceID, "associated with object instance:", self.Object.InstanceID)
+		
+		repeat task.wait() until self.Object.boxData.boxesUsed[player.Name]
+		hasBox = self.Object.boxData.boxesUsed[player.Name]
+
 		self.Connection:Disconnect()
 		self.Prompt:Destroy()
 		self.Object:SetBox(player, self.Box)
-		
-		self.Object.boxData:PublishTopic("BoxAssignedTo", player, self.Box)
+
+	elseif player == self.Object.player and self.Object.Picked then
+		warn("Player already has a box.")
 	else
 		self.Connection:Disconnect()
 		self.Prompt:Destroy()
