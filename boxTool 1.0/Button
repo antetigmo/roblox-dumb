@@ -32,13 +32,13 @@ end
 function Button:Init()
 	self.Prompt = self.Box.Base.Attachment:FindFirstChild("ProximityPrompt")
 	
-	self.Connection = self.Prompt.Triggered:Connect(function(...)
-		if ... == self.Object.player then
-			self:Press(...)
+	self.Connection = self.Prompt.Triggered:Connect(function(player)
+		if player == self.Object.player then
+			self:Press(player)
 		end
 	end)
 	
-	self.Subscription = self.Object:SubscribeTopic("BoxDropped", function(player, box)
+	self.Subscription = ServerToServer.Event:Connect(function(player, box)
 		warn("OnBoxDropped event triggered for:", self.Object, "from player:", player)
 		
 		local boxIndex = self.Object:GetBox(box).boxIndex
@@ -52,11 +52,14 @@ function Button:Init()
 end
 
 function Button:Press(player)
+	local hasBox = self.Object.boxData.boxUsed[player.Name]
+	
 	if player == self.Object.player then
 		print(player, ", on Button instance:", self.InstanceID, "associated with object instance:", self.Object.InstanceID)
 		self.Connection:Disconnect()
 		self.Prompt:Destroy()
 		self.Object:SetBox(player, self.Box)
+		
 		self.Object.boxData:PublishTopic("BoxAssignedTo", player, self.Box)
 	else
 		self.Connection:Disconnect()
