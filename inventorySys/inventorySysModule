@@ -1,0 +1,88 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ServerStorage= game:GetService("ServerStorage")
+local PlayersService = game:GetService("Players")
+local CollectionService = game:GetService("CollectionService")
+
+local ClientToServer = ReplicatedStorage.ClientToServer
+local ServerToClient = ReplicatedStorage.ServerToClient
+local ServerToServer = ReplicatedStorage.ServerToServer
+
+local componentFolder = ServerStorage.inventorySys.Components
+
+
+local inventorySys = {}
+inventorySys.__index = inventorySys
+local invVersion = "1.0"
+
+inventorySys.instanceNumber = 0
+inventorySys.items = game.Workspace.Items:GetChildren()
+
+function inventorySys.new(player)
+	inventorySys.instanceNumber += 1 
+	
+	local self = setmetatable({}, inventorySys)
+	self.instanceID = inventorySys.instanceNumber
+	self.player = player
+	self._topicEvent = Instance.new("BindableEvent")
+	
+	return self
+end
+
+function inventorySys:m_Init()
+	warn("Inventory initiated, current version:" ,invVersion,"; instanceID:", self.instanceID,"; player:", self.player)
+	self:m_AddAll()
+end
+
+function inventorySys:m_SetItem(item)
+	
+end
+
+function inventorySys:m_GetItem(item)
+	
+end
+
+function inventorySys:m_AddAll()
+	for _, instance in inventorySys.items do
+		if CollectionService:HasTag(instance, "item") then
+			self:m_AddComponents(instance)
+		end
+	end
+end
+
+function inventorySys:m_AddComponents(instance)
+	for _, tag in CollectionService:GetTags(instance) do
+		local component = componentFolder:FindFirstChild(tag)
+		if component then
+			self:m_CreateComponent(instance, component)
+		end
+	end	
+end
+
+function inventorySys:m_CreateComponent(instance, componentScript)
+	local compModule = require(componentScript)
+	local newComp = compModule.new(self, instance)
+	newComp:Init()
+end
+
+function inventorySys:m_PublishTopic(topicName, player, ...)
+	self._topicEvent:Fire(topicName, self.player, ...)	
+	--print("Published topic: " .. topicName)
+end
+
+function inventorySys:m_SubscribeTopic(topicName, callBack)
+	local connection = self._topicEvent.Event:Connect(function(name, player, ...)
+		if name == topicName then
+			callBack(player, ...)
+		end
+	end)
+	return connection
+end
+
+
+
+
+
+
+
+
+return inventorySys
