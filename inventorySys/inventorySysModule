@@ -31,14 +31,37 @@ end
 function inventorySys:m_Init()
 	warn("Inventory initiated, current version:" ,invVersion,"; instanceID:", self.instanceID,"; player:", self.player)
 	self:m_AddAll()
+	self:Connect()
 end
 
-function inventorySys:m_SetItem(item)
+function inventorySys:Connect()
+	--CLIENT TO SERVER 
+	local clientDropped = ClientToServer.OnServerEvent:Connect(function(player)
+		if player == self.player then
+			self:m_Drop()
+		end
+	end)
+	
+	
+end
+
+function inventorySys:m_SetItem(player, item)
+	self.Picked = true
+	item.Parent = player.Backpack
+	
 	
 end
 
 function inventorySys:m_GetItem(item)
+	local itemInfo = {}
+	itemInfo.item = item
 	
+	return itemInfo
+end
+
+function inventorySys:m_Drop(item)
+	local charCFrame = self.player.Character:FindFirstChild("HumanoidRootPart").CFrame
+	self.Box.Parent = game.Workspace
 end
 
 function inventorySys:m_AddAll()
@@ -77,12 +100,5 @@ function inventorySys:m_SubscribeTopic(topicName, callBack)
 	end)
 	return connection
 end
-
-
-
-
-
-
-
 
 return inventorySys
