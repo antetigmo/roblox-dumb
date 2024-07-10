@@ -9,25 +9,52 @@ local ServerToServer = ReplicatedStorage.ServerToServer
 
 local item = {}
 item.__index = item
+item.instanceNumber = 0
+
+item.itemsActive = {}
 
 function item.new(obj, itemObject)
+	item.instanceNumber += 1
+	
 	local self = setmetatable({}, item)
 	self.object = obj
 	self.itemObject = itemObject
+	self.instanceID = item.instanceNumber
 	
 	return self
 end
 
 function item:Init()
 	self:CreatePrompt(self.itemObject.Attachment)
+	self:Connect()
+end
+
+function item:Connect()
+	self.Triggered = self.Prompt.Triggered:Connect(function(player)
+		self:Press(player, self.itemObject)
+	end)	
+	warn("Item trigger connectection.")
 end
 
 function item:CreatePrompt(item)
 	local Prompt = Instance.new("ProximityPrompt")
 	Prompt.HoldDuration = 0.5
 	Prompt.Parent = item
+	self.Prompt = Prompt
 	
-	return Prompt
+	return self.Prompt
+end
+
+function item:Press(player, itemObject)
+	self.object:m_SetItem(player, itemObject)
+	self.Triggered:Disconnect()
+	self.Prompt:Destroy()
+	
+	self:AssignToItemsActive(player, itemObject)
+end
+
+function item:AssignToItemsActive(player, item)
+	self.itemsActive[player.Name] = {player, item}
 end
 
 return item
