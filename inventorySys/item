@@ -17,6 +17,8 @@ function item.new(obj, itemObject)
 	item.instanceNumber += 1
 	
 	local self = setmetatable({}, item)
+	self.name = "item"
+	self.NameAndID = self.name .."id:" .. tostring(item.instanceNumber) 
 	self.object = obj
 	self.itemObject = itemObject
 	self.instanceID = item.instanceNumber
