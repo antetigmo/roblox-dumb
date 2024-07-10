@@ -43,13 +43,11 @@ function inventorySys:Connect()
 		end
 	end)
 	
-	
 end
 
 function inventorySys:m_SetItem(player, item)
 	self.Picked = true
 	item.Parent = player.Backpack
-	
 end
 
 function inventorySys:m_GetItem(item)
@@ -61,7 +59,7 @@ end
 
 function inventorySys:m_Drop(item)
 	local charCFrame = self.player.Character:FindFirstChild("HumanoidRootPart").CFrame
-	self.Box.Parent = game.Workspace
+	item.Parent = game.Workspace
 end
 
 function inventorySys:m_AddAll()
@@ -85,13 +83,13 @@ function inventorySys:m_CreateComponent(instance, componentScript)
 	local compModule = require(componentScript)
 	local newComp = compModule.new(self, instance)
 	newComp:Init()
-
-	self.Components[newComp.name] = {}
 	
 	if self.Components[newComp.name] then
 		table.insert(self.Components[newComp.name], newComp.instanceID, newComp)
-		print(self.Components)
-	end 
+	else
+		self.Components[newComp.name] = {}
+		table.insert(self.Components[newComp.name], newComp.instanceID, newComp)
+	end
 end
 
 function inventorySys:m_PublishTopic(topicName, player, ...)
