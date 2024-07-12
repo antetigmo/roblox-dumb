@@ -39,32 +39,39 @@ function item:Connect()
 	warn("Item prompt trigger connection.")
 	
 	self.Equipped = self.itemObject.Equipped:Connect(function()
-		self.object.currentItemEquipped = self.itemObject
+		local player = PlayersService:GetPlayerFromCharacter(self.itemObject.Parent) or nil
+		if player == self.object.player then
+			self.object.currentItemEquipped = self.itemObject
+		end
 	end)
 	
 	self.Unequipped = self.itemObject.Unequipped:Connect(function()
-		self.object.currentItemEquipped = nil
+		local player = PlayersService:GetPlayerFromCharacter(self.itemObject.Parent.Parent) or nil
+		if player == self.object.player then
+			self.object.currentItemEquipped = nil
+		end
 	end)
 	
 	self.object:m_SubscribeTopic("itemDropped", function(player, item)
 		print("Player:", player, "dropped:", item)
-		if self.itemsActive[player.Name] then
+		if self.itemsActive[player.Name][1] == player then
+			self:DestroyHandle(item)
 			print("Player that clicked backspace and dropped is:", player, "and item is:", item)
 		end
 	end)
 end
 
 function item:CreatePrompt(item)
-	local Prompt = item.Plane:FindFirstChildWhichIsA("ProximityPrompt") or Instance.new("ProximityPrompt")
+	local Prompt = item.Plane.Attachment:FindFirstChildWhichIsA("ProximityPrompt") or Instance.new("ProximityPrompt")
 	Prompt.HoldDuration = 0.5
-	Prompt.Parent = item.Plane:FindFirstChildWhichIsA("Attachment")
+	Prompt.Parent = item.Plane.Attachment
 	self.Prompt = Prompt
-	
+
 	return self.Prompt
 end
 
 function item:CreateHandle(item)
-	local Handle = Instance.new("Part")
+	local Handle = item:FindFirstChildWhichIsA("ProximityPrompt") or Instance.new("Part")
 	Handle.Size = Vector3.new(1, 1, 1)
 	Handle.Parent = item
 	Handle.Name = "Handle"
@@ -80,10 +87,13 @@ function item:CreateHandle(item)
 	return Handle
 end
 
-function item:RemoveHandle(item)
+function item:DestroyHandle(item)
 	local Handle = item:FindFirstChild("Handle")
 	if Handle then
+		item.Plane.CanCollide = true
 		Handle:Destroy()
+	else
+		warn("Handle doesen't exist anymore.")
 	end
 end
 
@@ -104,4 +114,17 @@ function item:RemoveFromItemsActive(player, item)
 	table.remove(self.itemsActive[player.Name])
 end
 
+function item:PublishTopic(topicName, player, ...)
+	self._topicEvent:Fire(topicName, self.player, ...)	
+	--print("Published topic: " .. topicName)
+end
+
+function item:SubscribeTopic(topicName, callBack)
+	local connection = self._topicEvent.Event:Connect(function(name, player, ...)
+		if name == topicName then
+			callBack(player, ...)
+		end
+	end)
+	return connection
+end
 return item
