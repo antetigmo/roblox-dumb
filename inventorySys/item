@@ -17,13 +17,14 @@ MAX_OF_ITEMS = 5
 
 function item.new(object, itemObject)
 	item.instanceNumber += 1
-	
+
 	local self = setmetatable({}, item)
 	self.object = object
 	self.itemObject = itemObject
 	self.name = "item"
 	self.instanceID = item.instanceNumber
-	
+	self._topicEvent = Instance.new("BindableEvent")
+
 	return self
 end
 
@@ -37,29 +38,41 @@ function item:Connect()
 		self:Press(player, self.itemObject)
 	end)	
 	warn("Item prompt trigger connection.")
-	
+
 	self.Equipped = self.itemObject.Equipped:Connect(function()
 		local player = PlayersService:GetPlayerFromCharacter(self.itemObject.Parent) or nil
 		if player == self.object.player then
-			self.object.currentItemEquipped = self.itemObject
+			self.object.currentItemEquipped = {self.itemObject, self}
 		end
 	end)
-	
+
 	self.Unequipped = self.itemObject.Unequipped:Connect(function()
 		local player = PlayersService:GetPlayerFromCharacter(self.itemObject.Parent.Parent) or nil
 		if player == self.object.player then
-			self.object.currentItemEquipped = nil
+			self.object.currentItemEquipped = {nil, self}
 		end
 	end)
-	
-	self.object:m_SubscribeTopic("itemDropped", function(player, item)
+
+	self.Subscription = self:SubscribeTopic("itemDropped", function(player, item)
 		print("Player:", player, "dropped:", item)
 		if self.itemsActive[player.Name][1] == player then
 			self:DestroyHandle(item)
+			self:Disconnect()
+			self:CreatePrompt(item)
+			self:Connect()
+			self.object.currentItemEquipped = {nil, self}
 			print("Player that clicked backspace and dropped is:", player, "and item is:", item)
 		end
 	end)
 end
+
+function item:Disconnect()
+	self.Triggered:Disconnect()
+	self.Equipped:Disconnect()
+	self.Unequipped:Disconnect()
+	self.Subscription:Disconnect()
+end
+
 
 function item:CreatePrompt(item)
 	local Prompt = item.Plane.Attachment:FindFirstChildWhichIsA("ProximityPrompt") or Instance.new("ProximityPrompt")
@@ -71,19 +84,19 @@ function item:CreatePrompt(item)
 end
 
 function item:CreateHandle(item)
-	local Handle = item:FindFirstChildWhichIsA("ProximityPrompt") or Instance.new("Part")
+	local Handle = item:FindFirstChild("Handle") or Instance.new("Part")
 	Handle.Size = Vector3.new(1, 1, 1)
 	Handle.Parent = item
 	Handle.Name = "Handle"
 	Handle.Anchored = false
 	Handle.CanCollide = false
 	Handle.Transparency = 1
-	
+
 	Handle.Position = item.Plane.Position
 	item.WeldConstraint.Part0 = item.Plane
 	item.WeldConstraint.Part1 = Handle
 	item.Plane.CanCollide = false
-	
+
 	return Handle
 end
 
@@ -101,7 +114,7 @@ function item:Press(player, itemObject)
 	self.object:m_SetItem(player, itemObject)
 	self.Triggered:Disconnect()
 	self.Prompt:Destroy()
-	
+
 	self:CreateHandle(itemObject)
 	self:AssignToItemsActive(player, itemObject)
 end
@@ -115,7 +128,7 @@ function item:RemoveFromItemsActive(player, item)
 end
 
 function item:PublishTopic(topicName, player, ...)
-	self._topicEvent:Fire(topicName, self.player, ...)	
+	self._topicEvent:Fire(topicName, self.object.player, ...)	
 	--print("Published topic: " .. topicName)
 end
 
