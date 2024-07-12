@@ -13,6 +13,8 @@ item.instanceNumber = 0
 
 item.itemsActive = {}
 
+MAX_OF_ITEMS = 5
+
 function item.new(object, itemObject)
 	item.instanceNumber += 1
 	
@@ -34,11 +36,26 @@ function item:Connect()
 	self.Triggered = self.Prompt.Triggered:Connect(function(player)
 		self:Press(player, self.itemObject)
 	end)	
-	warn("Item trigger connection.")
+	warn("Item prompt trigger connection.")
+	
+	self.Equipped = self.itemObject.Equipped:Connect(function()
+		self.object.currentItemEquipped = self.itemObject
+	end)
+	
+	self.Unequipped = self.itemObject.Unequipped:Connect(function()
+		self.object.currentItemEquipped = nil
+	end)
+	
+	self.object:m_SubscribeTopic("itemDropped", function(player, item)
+		print("Player:", player, "dropped:", item)
+		if self.itemsActive[player.Name] then
+			print("Player that clicked backspace and dropped is:", player, "and item is:", item)
+		end
+	end)
 end
 
 function item:CreatePrompt(item)
-	local Prompt = Instance.new("ProximityPrompt")
+	local Prompt = item.Plane:FindFirstChildWhichIsA("ProximityPrompt") or Instance.new("ProximityPrompt")
 	Prompt.HoldDuration = 0.5
 	Prompt.Parent = item.Plane:FindFirstChildWhichIsA("Attachment")
 	self.Prompt = Prompt
@@ -81,6 +98,10 @@ end
 
 function item:AssignToItemsActive(player, item)
 	self.itemsActive[player.Name] = {player, item}
+end
+
+function item:RemoveFromItemsActive(player, item)
+	table.remove(self.itemsActive[player.Name])
 end
 
 return item
