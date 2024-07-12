@@ -13,21 +13,20 @@ item.instanceNumber = 0
 
 item.itemsActive = {}
 
-function item.new(obj, itemObject)
+function item.new(object, itemObject)
 	item.instanceNumber += 1
 	
 	local self = setmetatable({}, item)
-	self.name = "item"
-	self.NameAndID = self.name .."id:" .. tostring(item.instanceNumber) 
-	self.object = obj
+	self.object = object
 	self.itemObject = itemObject
+	self.name = "item"
 	self.instanceID = item.instanceNumber
 	
 	return self
 end
 
 function item:Init()
-	self:CreatePrompt(self.itemObject.Attachment)
+	self:CreatePrompt(self.itemObject)
 	self:Connect()
 end
 
@@ -35,16 +34,40 @@ function item:Connect()
 	self.Triggered = self.Prompt.Triggered:Connect(function(player)
 		self:Press(player, self.itemObject)
 	end)	
-	warn("Item trigger connectection.")
+	warn("Item trigger connection.")
 end
 
 function item:CreatePrompt(item)
 	local Prompt = Instance.new("ProximityPrompt")
 	Prompt.HoldDuration = 0.5
-	Prompt.Parent = item
+	Prompt.Parent = item.Plane:FindFirstChildWhichIsA("Attachment")
 	self.Prompt = Prompt
 	
 	return self.Prompt
+end
+
+function item:CreateHandle(item)
+	local Handle = Instance.new("Part")
+	Handle.Size = Vector3.new(1, 1, 1)
+	Handle.Parent = item
+	Handle.Name = "Handle"
+	Handle.Anchored = false
+	Handle.CanCollide = false
+	Handle.Transparency = 1
+	
+	Handle.Position = item.Plane.Position
+	item.WeldConstraint.Part0 = item.Plane
+	item.WeldConstraint.Part1 = Handle
+	item.Plane.CanCollide = false
+	
+	return Handle
+end
+
+function item:RemoveHandle(item)
+	local Handle = item:FindFirstChild("Handle")
+	if Handle then
+		Handle:Destroy()
+	end
 end
 
 function item:Press(player, itemObject)
@@ -52,6 +75,7 @@ function item:Press(player, itemObject)
 	self.Triggered:Disconnect()
 	self.Prompt:Destroy()
 	
+	self:CreateHandle(itemObject)
 	self:AssignToItemsActive(player, itemObject)
 end
 
