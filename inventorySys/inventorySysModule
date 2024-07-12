@@ -25,6 +25,8 @@ function inventorySys.new(player)
 	self.Components = {}
 	self._topicEvent = Instance.new("BindableEvent")
 	
+	self.currentItemEquipped = nil
+	
 	return self
 end
 
@@ -37,8 +39,8 @@ end
 function inventorySys:Connect()
 	--CLIENT TO SERVER 
 	local clientDropped = ClientToServer.OnServerEvent:Connect(function(player)
-		if player == self.player then
-			self:m_Drop()
+		if player == self.player and self.currentItemEquipped then
+			self:m_Drop(self.currentItemEquipped)
 		end
 	end)
 end
@@ -57,8 +59,10 @@ end
 
 function inventorySys:m_Drop(item)
 	local charCFrame = self.player.Character:FindFirstChild("HumanoidRootPart").CFrame
-	print(self.Components)
 	item.Parent = game.Workspace
+	item.Plane.CFrame = charCFrame * CFrame.new(0,2,-8) * CFrame.Angles(math.rad(180),0,0)
+	
+	self:m_PublishTopic("itemDropped", self.player, item)
 end
 
 function inventorySys:m_AddAll()
