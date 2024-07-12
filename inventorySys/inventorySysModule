@@ -18,15 +18,15 @@ inventorySys.items = game.Workspace.Items:GetChildren()
 
 function inventorySys.new(player)
 	inventorySys.instanceNumber += 1 
-	
+
 	local self = setmetatable({}, inventorySys)
 	self.instanceID = inventorySys.instanceNumber
 	self.player = player
 	self.Components = {}
 	self._topicEvent = Instance.new("BindableEvent")
-	
+
 	self.currentItemEquipped = nil
-	
+
 	return self
 end
 
@@ -39,8 +39,8 @@ end
 function inventorySys:Connect()
 	--CLIENT TO SERVER 
 	local clientDropped = ClientToServer.OnServerEvent:Connect(function(player)
-		if player == self.player and self.currentItemEquipped then
-			self:m_Drop(self.currentItemEquipped)
+		if player == self.player and self.currentItemEquipped[1] then
+			self:m_Drop(self.currentItemEquipped[1])
 		end
 	end)
 end
@@ -53,7 +53,7 @@ end
 function inventorySys:m_GetItem(item)
 	local itemInfo = {}
 	itemInfo.item = item
-	
+
 	return itemInfo
 end
 
@@ -61,8 +61,9 @@ function inventorySys:m_Drop(item)
 	local charCFrame = self.player.Character:FindFirstChild("HumanoidRootPart").CFrame
 	item.Parent = game.Workspace
 	item.Plane.CFrame = charCFrame * CFrame.new(0,2,-8) * CFrame.Angles(math.rad(180),0,0)
-	
-	self:m_PublishTopic("itemDropped", self.player, item)
+
+	local component = self.currentItemEquipped[2]
+	component:PublishTopic("itemDropped", self.player, item)
 end
 
 function inventorySys:m_AddAll()
@@ -86,7 +87,7 @@ function inventorySys:m_CreateComponent(instance, componentScript)
 	local compModule = require(componentScript)
 	local newComp = compModule.new(self, instance)
 	newComp:Init()
-	
+
 	if self.Components[newComp.name] then
 		table.insert(self.Components[newComp.name], newComp.instanceID, newComp)
 	else
