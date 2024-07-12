@@ -9,7 +9,6 @@ local ServerToServer = ReplicatedStorage.ServerToServer
 
 local componentFolder = ServerStorage.inventorySys.Components
 
-
 local inventorySys = {}
 inventorySys.__index = inventorySys
 local invVersion = "1.0"
@@ -42,7 +41,6 @@ function inventorySys:Connect()
 			self:m_Drop()
 		end
 	end)
-	
 end
 
 function inventorySys:m_SetItem(player, item)
@@ -59,6 +57,7 @@ end
 
 function inventorySys:m_Drop(item)
 	local charCFrame = self.player.Character:FindFirstChild("HumanoidRootPart").CFrame
+	print(self.Components)
 	item.Parent = game.Workspace
 end
 
