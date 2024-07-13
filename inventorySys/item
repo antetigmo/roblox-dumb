@@ -47,7 +47,7 @@ function item:Connect()
 	end)
 
 	self.Unequipped = self.itemObject.Unequipped:Connect(function()
-		local player = PlayersService:GetPlayerFromCharacter(self.itemObject.Parent.Parent) or nil
+		local player = self.itemObject.Parent.Parent
 		if player == self.object.player then
 			self.object.currentItemEquipped = {nil, self}
 		end
