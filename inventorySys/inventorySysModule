@@ -11,7 +11,7 @@ local componentFolder = ServerStorage.inventorySys.Components
 
 local inventorySys = {}
 inventorySys.__index = inventorySys
-local invVersion = "1.0"
+local invVersion = "1.1.1"
 
 inventorySys.instanceNumber = 0
 inventorySys.items = game.Workspace.Items:GetChildren()
