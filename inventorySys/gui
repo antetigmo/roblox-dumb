@@ -27,16 +27,16 @@ function guiHandler:Init()
 end
 
 function guiHandler:ConnectAll()
-	self.MouseClickedConnection = ClientToServer.OnServerEvent:Connect(function(player, amountOfSlots)
+	self.MouseClickedConnection = ClientToServer.OnServerEvent:Connect(function(player, slot, amountOfSlots)
 		if player == self.player then
-			self:OnMouseClicked(player, amountOfSlots)
+			self:OnMouseClicked(player, slot, amountOfSlots)
 			--self.object.slots = amountOfSlots
 		end
 	end)
 end
 
 function guiHandler:DisconnectAll()
-	
+	self.MouseClickedConnection:Disconnect()
 end
 
 function guiHandler:AddressSlots() -- temporary function, need to re-do,
@@ -55,7 +55,8 @@ function guiHandler:AddressSlots() -- temporary function, need to re-do,
 end
 
 
-function guiHandler:OnMouseClicked(player, amountOfSlots)
+function guiHandler:OnMouseClicked(player, slot, amountOfSlots)
+	print(slot)
 	print(self.object)
 end
 
