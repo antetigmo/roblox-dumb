@@ -116,6 +116,7 @@ function item:Press(player, itemObject)
 	self.Triggered:Disconnect()
 	self.Prompt:Destroy()
 
+	print(self.object)
 	self:CreateHandle(itemObject)
 	self:AssignToItemsActive(player, itemObject)
 end
