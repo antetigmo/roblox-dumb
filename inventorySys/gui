@@ -1,0 +1,50 @@
+local guiHandler = {}
+guiHandler.__index = guiHandler
+
+function guiHandler.new(object, player)
+	local self = setmetatable({}, guiHandler)
+	
+	self.object = object
+	self.player = player
+	self.inventoryUi = player.PlayerGui.inventoryUi
+	
+	return self
+end
+
+function guiHandler:Init()
+	self.slots = self:AddressSlots()
+	print(self.slots)
+end
+
+function guiHandler:AddressSlots() -- temporary function, need remake,
+	self.slotsChildren = self.inventoryUi.Main.ScrollingFrame:GetChildren()
+	local amountOfSlots = {}
+	local index = 0
+
+	for _, slot in pairs(self.slotsChildren) do
+		if slot:IsA("Frame") then
+			index +=1
+			amountOfSlots[index] = {
+				event = slot.InputBegan:Connect(function(input)
+					print(slot)
+				end),
+				slot,
+			}
+		end
+	end
+	return amountOfSlots
+end
+
+function guiHandler:ConnectAll()
+	self.OnMouseClicked = 1
+end
+
+function guiHandler:DisconnectAll()
+	
+end
+
+function guiHandler:OnMouseClicked()
+	
+end
+
+return guiHandler
