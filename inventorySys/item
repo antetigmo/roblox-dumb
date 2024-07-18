@@ -1,65 +1,145 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ClientToServer = ReplicatedStorage.ClickInventory
+local ServerStorage= game:GetService("ServerStorage")
+local PlayersService = game:GetService("Players")
+local CollectionService = game:GetService("CollectionService")
 
-local guiHandler = {}
-guiHandler.__index = guiHandler
-guiHandler.instanceNumber = 0
+local ClientToServer = nil
+local ServerToClient = ReplicatedStorage.ServerToClient
+local ServerToServer = ReplicatedStorage.ServerToServer
 
-local versionN = "1.0.0"
+local item = {}
+item.__index = item
+item.instanceNumber = 0
 
-function guiHandler.new(object, player)
-	guiHandler.instanceNumber += 1
-	local self = setmetatable({}, guiHandler)
-	
+item.itemsActive = {}
+
+MAX_OF_ITEMS = 5
+
+function item.new(object, itemObject)
+	item.instanceNumber += 1
+
+	local self = setmetatable({}, item)
 	self.object = object
-	self.player = player
-	self.name = "guiHandler"
-	self.instanceID = guiHandler.instanceNumber
-	
-	self.inventoryUi = player.PlayerGui.inventoryUi
-	
+	self.itemObject = itemObject
+	self.name = "item"
+	self.instanceID = item.instanceNumber
+	self._topicEvent = Instance.new("BindableEvent")
+
 	return self
 end
 
-function guiHandler:Init()
+function item:Init()
+	self:CreatePrompt(self.itemObject)
 	self:ConnectAll()
-	self.object.slots = self:AddressSlots()
 end
 
-function guiHandler:ConnectAll()
-	self.MouseClickedConnection = ClientToServer.OnServerEvent:Connect(function(player, slot, amountOfSlots)
-		if player == self.player then
-			self:OnMouseClicked(player, slot, amountOfSlots)
-			--self.object.slots = amountOfSlots
+function item:ConnectAll()
+	self.Triggered = self.Prompt.Triggered:Connect(function(player)
+		self:Press(player, self.itemObject)
+	end)	
+	warn("Item prompt trigger connection.")
+
+	self.Equipped = self.itemObject.Equipped:Connect(function()
+		local player = PlayersService:GetPlayerFromCharacter(self.itemObject.Parent) or nil
+		if player == self.object.player then
+			self.object.currentItemEquipped = {self.itemObject, self}
+		end
+	end)
+
+	self.Unequipped = self.itemObject.Unequipped:Connect(function()
+		local player = self.itemObject.Parent.Parent
+		if player == self.object.player then
+			self.object.currentItemEquipped = {nil, self}
+		end
+	end)
+
+	self.Subscription = self:SubscribeTopic("itemDropped", function(player, item)
+		print("Player:", player, "dropped:", item)
+		if self.itemsActive[player.Name][1] == player then
+			self:DestroyHandle(item)
+			self:DisconnectAll()
+			self:CreatePrompt(item)
+			self:ConnectAll()
+			self.object.currentItemEquipped = {nil, self}
+			print("Player that clicked backspace and dropped is:", player, "and item is:", item)
 		end
 	end)
 end
 
-function guiHandler:DisconnectAll()
-	self.MouseClickedConnection:Disconnect()
+function item:DisconnectAll()
+	self.Triggered:Disconnect()
+	self.Equipped:Disconnect()
+	self.Unequipped:Disconnect()
+	self.Subscription:Disconnect()
 end
 
-function guiHandler:AddressSlots() -- temporary function, need to re-do,
-	local slotsChildren = self.inventoryUi.Main.ScrollingFrame:GetChildren()
-	local amountOfSlots = {}
-	local index = 0
 
-	for _, slot in pairs(slotsChildren) do
-		if slot:IsA("Frame") then
-			index +=1
-			amountOfSlots[index] = slot
-		end
+function item:CreatePrompt(item)
+	local Prompt = item.Plane.Attachment:FindFirstChildWhichIsA("ProximityPrompt") or Instance.new("ProximityPrompt")
+	Prompt.HoldDuration = 0.5
+	Prompt.Parent = item.Plane.Attachment
+	self.Prompt = Prompt
+
+	return self.Prompt
+end
+
+function item:CreateHandle(item)
+	local Handle = item:FindFirstChild("Handle") or Instance.new("Part")
+	Handle.Size = Vector3.new(1, 1, 1)
+	Handle.Parent = item
+	Handle.Name = "Handle"
+	Handle.Anchored = false
+	Handle.CanCollide = false
+	Handle.Transparency = 1
+
+	Handle.Position = item.Plane.Position
+	item.WeldConstraint.Enabled = true
+	item.WeldConstraint.Part0 = item.Plane
+	item.WeldConstraint.Part1 = Handle
+	item.Plane.CanCollide = false
+
+	return Handle
+end
+
+function item:DestroyHandle(item)
+	local Handle = item:FindFirstChild("Handle")
+	if Handle then
+		item.Plane.CanCollide = true
+		Handle:Destroy()
+	else
+		warn("Handle doesen't exist anymore.")
 	end
-
-	return amountOfSlots
 end
 
+function item:Press(player, itemObject)
+	self.object:m_SetItem(player, itemObject)
+	self.Triggered:Disconnect()
+	self.Prompt:Destroy()
 
-function guiHandler:OnMouseClicked(player, slot, amountOfSlots)
-	print(slot)
-	print(self.object)
+	self:CreateHandle(itemObject)
+	self:AssignToItemsActive(player, itemObject)
 end
 
-warn("InventoryUi version:", versionN)
+function item:AssignToItemsActive(player, item)
+	self.itemsActive[player.Name] = {player, item}
+end
 
-return guiHandler
+function item:RemoveFromItemsActive(player, item)
+	table.remove(self.itemsActive[player.Name])
+end
+
+function item:PublishTopic(topicName, player, ...)
+	self._topicEvent:Fire(topicName, self.object.player, ...)	
+	--print("Published topic: " .. topicName)
+end
+
+function item:SubscribeTopic(topicName, callBack)
+	local connection = self._topicEvent.Event:Connect(function(name, player, ...)
+		if name == topicName then
+			callBack(player, ...)
+		end
+	end)
+	return connection
+end
+
+return item
