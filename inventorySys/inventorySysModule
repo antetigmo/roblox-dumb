@@ -8,6 +8,8 @@ local ServerToClient = ReplicatedStorage.ServerToClient
 local ServerToServer = ReplicatedStorage.ServerToServer
 
 local componentFolder = ServerStorage.inventorySys.Components
+local classComponents = {"gui"}
+
 
 local inventorySys = {}
 inventorySys.__index = inventorySys
@@ -32,6 +34,7 @@ end
 
 function inventorySys:m_Init()
 	warn("Inventory initiated, current version:" ,invVersion,"; instanceID:", self.instanceID,"; player:", self.player)
+	self:m_LoadComponents()
 	self:m_AddAll()
 	self:Connect()
 end
@@ -64,6 +67,14 @@ function inventorySys:m_Drop(item)
 
 	local component = self.currentItemEquipped[2]
 	component:PublishTopic("itemDropped", self.player, item)
+end
+
+function inventorySys:m_LoadComponents()
+	for _, component in classComponents do
+		local compModule = require(componentFolder:FindFirstChild(component))
+		local newComp = compModule.new(self, self.player)
+		newComp:Init()
+	end
 end
 
 function inventorySys:m_AddAll()
@@ -108,6 +119,10 @@ function inventorySys:m_SubscribeTopic(topicName, callBack)
 		end
 	end)
 	return connection
+end
+
+function inventorySys:m_AdressItemOnSlot(item)
+
 end
 
 return inventorySys
