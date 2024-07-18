@@ -3,7 +3,7 @@ local ServerStorage= game:GetService("ServerStorage")
 local PlayersService = game:GetService("Players")
 local CollectionService = game:GetService("CollectionService")
 
-local ClientToServer = ReplicatedStorage.ClientToServer
+local ClientToServer = ReplicatedStorage.Drop
 local ServerToClient = ReplicatedStorage.ServerToClient
 local ServerToServer = ReplicatedStorage.ServerToServer
 
@@ -28,7 +28,7 @@ function inventorySys.new(player)
 	self._topicEvent = Instance.new("BindableEvent")
 
 	self.currentItemEquipped = nil
-
+	
 	return self
 end
 
