@@ -71,15 +71,19 @@ end
 
 function inventorySys:m_LoadComponents()
 	for _, component in classComponents do
+		
+		self.Components.ClassComponents = {}	
+		local classComponents = self.Components.ClassComponents
+		
 		local compModule = require(componentFolder:FindFirstChild(component))
 		local newComp = compModule.new(self, self.player)
 		newComp:Init()
 	
-		if self.Components[newComp.name] then
-			table.insert(self.Components[newComp.name], newComp.instanceID, newComp)
+		if classComponents[newComp.name] then
+			table.insert(classComponents[newComp.name], newComp.instanceID, newComp)
 		else
-			self.Components[newComp.name] = {}
-			table.insert(self.Components[newComp.name], newComp.instanceID, newComp)
+			classComponents[newComp.name] = {}
+			table.insert(classComponents[newComp.name], newComp.instanceID, newComp)
 		end
 	end
 end
@@ -106,6 +110,7 @@ function inventorySys:m_CreateComponent(instance, componentScript)
 	local newComp = compModule.new(self, instance)
 	newComp:Init()
 
+	
 	if self.Components[newComp.name] then
 		table.insert(self.Components[newComp.name], newComp.instanceID, newComp)
 	else
