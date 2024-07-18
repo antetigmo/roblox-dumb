@@ -30,10 +30,10 @@ end
 
 function item:Init()
 	self:CreatePrompt(self.itemObject)
-	self:Connect()
+	self:ConnectAll()
 end
 
-function item:Connect()
+function item:ConnectAll()
 	self.Triggered = self.Prompt.Triggered:Connect(function(player)
 		self:Press(player, self.itemObject)
 	end)	
@@ -57,16 +57,16 @@ function item:Connect()
 		print("Player:", player, "dropped:", item)
 		if self.itemsActive[player.Name][1] == player then
 			self:DestroyHandle(item)
-			self:Disconnect()
+			self:DisconnectAll()
 			self:CreatePrompt(item)
-			self:Connect()
+			self:ConnectAll()
 			self.object.currentItemEquipped = {nil, self}
 			print("Player that clicked backspace and dropped is:", player, "and item is:", item)
 		end
 	end)
 end
 
-function item:Disconnect()
+function item:DisconnectAll()
 	self.Triggered:Disconnect()
 	self.Equipped:Disconnect()
 	self.Unequipped:Disconnect()
@@ -93,6 +93,7 @@ function item:CreateHandle(item)
 	Handle.Transparency = 1
 
 	Handle.Position = item.Plane.Position
+	item.WeldConstraint.Enabled = true
 	item.WeldConstraint.Part0 = item.Plane
 	item.WeldConstraint.Part1 = Handle
 	item.Plane.CanCollide = false
@@ -140,4 +141,5 @@ function item:SubscribeTopic(topicName, callBack)
 	end)
 	return connection
 end
+
 return item
