@@ -74,6 +74,13 @@ function inventorySys:m_LoadComponents()
 		local compModule = require(componentFolder:FindFirstChild(component))
 		local newComp = compModule.new(self, self.player)
 		newComp:Init()
+	
+		if self.Components[newComp.name] then
+			table.insert(self.Components[newComp.name], newComp.instanceID, newComp)
+		else
+			self.Components[newComp.name] = {}
+			table.insert(self.Components[newComp.name], newComp.instanceID, newComp)
+		end
 	end
 end
 
@@ -105,6 +112,7 @@ function inventorySys:m_CreateComponent(instance, componentScript)
 		self.Components[newComp.name] = {}
 		table.insert(self.Components[newComp.name], newComp.instanceID, newComp)
 	end
+
 end
 
 function inventorySys:m_PublishTopic(topicName, player, ...)
