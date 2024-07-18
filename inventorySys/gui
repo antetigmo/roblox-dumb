@@ -3,12 +3,19 @@ local ClientToServer = ReplicatedStorage.ClickInventory
 
 local guiHandler = {}
 guiHandler.__index = guiHandler
+guiHandler.instanceNumber = 0
+
+local versionN = "1.0.0"
 
 function guiHandler.new(object, player)
+	guiHandler.instanceNumber += 1
 	local self = setmetatable({}, guiHandler)
 	
 	self.object = object
 	self.player = player
+	self.name = "guiHandler"
+	self.instanceID = guiHandler.instanceNumber
+	
 	self.inventoryUi = player.PlayerGui.inventoryUi
 	
 	return self
@@ -49,7 +56,9 @@ end
 
 
 function guiHandler:OnMouseClicked(player, amountOfSlots)
-	
+	print(self.object)
 end
+
+warn("InventoryUi version:", versionN)
 
 return guiHandler
