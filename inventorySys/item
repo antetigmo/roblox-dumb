@@ -25,6 +25,8 @@ function item.new(object, itemObject)
 	self.instanceID = item.instanceNumber
 	self._topicEvent = Instance.new("BindableEvent")
 
+	self.icon = self.itemObject:FindFirstChildWhichIsA("ImageLabel")
+
 	return self
 end
 
@@ -36,7 +38,9 @@ end
 function item:ConnectAll()
 	self.Triggered = self.Prompt.Triggered:Connect(function(player)
 		self:Press(player, self.itemObject)
+		self.object:m_PublishTopic("Pressed", player, self.itemObject, self.icon)
 	end)	
+	
 	warn("Item prompt trigger connection.")
 
 	self.Equipped = self.itemObject.Equipped:Connect(function()
@@ -112,7 +116,7 @@ function item:DestroyHandle(item)
 end
 
 function item:Press(player, itemObject)
-	self.object:m_SetItem(player, itemObject)
+	--self.object:m_SetItem(player, itemObject)
 	self.Triggered:Disconnect()
 	self.Prompt:Destroy()
 
