@@ -27,6 +27,13 @@ function guiHandler:Init()
 end
 
 function guiHandler:ConnectAll()
+	
+	self.PromptPressedConnection = self.object:m_SubscribeTopic("Pressed", function(player, item, icon)
+		if player == self.player then
+			self:SetIcon(item, icon)
+		end
+	end)
+	
 	self.MouseClickedConnection = ClientToServer.OnServerEvent:Connect(function(player, slot, amountOfSlots)
 		if player == self.player then
 			self:OnMouseClicked(player, slot, amountOfSlots)
@@ -54,6 +61,20 @@ function guiHandler:AddressSlots() -- temporary function, need to re-do,
 	return amountOfSlots
 end
 
+function guiHandler:CheckAvailableFrame()
+	for i, availableSlot in ipairs(self.object.slots) do
+		if availableSlot:FindFirstChildWhichIsA("ImageLabel") then
+			return nil
+		else
+			return availableSlot
+		end
+	end
+end
+
+function guiHandler:SetIcon(item, icon)
+	local availableSlot = self:CheckAvailableFrame()
+	icon.Parent = availableSlot
+end
 
 function guiHandler:OnMouseClicked(player, slot, amountOfSlots)
 	print(slot)
