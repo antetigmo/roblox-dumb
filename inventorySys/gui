@@ -64,7 +64,7 @@ end
 function guiHandler:CheckAvailableFrame()
 	for i, availableSlot in ipairs(self.object.slots) do
 		if availableSlot:FindFirstChildWhichIsA("ImageLabel") then
-			return nil
+			--warn("Found an image label")
 		else
 			return availableSlot
 		end
