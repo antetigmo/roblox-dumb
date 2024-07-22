@@ -109,7 +109,6 @@ function inventorySys:m_CreateComponent(instance, componentScript)
 	local compModule = require(componentScript)
 	local newComp = compModule.new(self, instance)
 	newComp:Init()
-
 	
 	if self.Components[newComp.name] then
 		table.insert(self.Components[newComp.name], newComp.instanceID, newComp)
@@ -120,8 +119,17 @@ function inventorySys:m_CreateComponent(instance, componentScript)
 
 end
 
+function inventorySys:m_GetComponent(name, instanceID)
+	if self.Components[name] then
+		return self.Components[name][instanceID]
+	else
+		warn("Component not found")
+		return nil
+	end
+end
+
 function inventorySys:m_PublishTopic(topicName, player, ...)
-	self._topicEvent:Fire(topicName, self.player, ...)	
+	self._topicEvent:Fire(topicName, player, ...)	
 	--print("Published topic: " .. topicName)
 end
 
