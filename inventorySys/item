@@ -26,6 +26,11 @@ function item.new(object, itemObject)
 	self._topicEvent = Instance.new("BindableEvent")
 
 	self.icon = self.itemObject:FindFirstChildWhichIsA("ImageLabel")
+	
+	self.classMethods = {
+		CreateHandle = function(...) return self:CreateHandle(...) end,
+		DestroyHandle = function(...) return self:DestroyHandle(...) end
+	}
 
 	return self
 end
@@ -38,9 +43,9 @@ end
 function item:ConnectAll()
 	self.Triggered = self.Prompt.Triggered:Connect(function(player)
 		self:Press(player, self.itemObject)
-		self.object:m_PublishTopic("Pressed", player, self.itemObject, self.icon)
+		self.object:m_PublishTopic("Pressed", player, self.itemObject, self.instanceID)
 	end)	
-	
+
 	warn("Item prompt trigger connection.")
 
 	self.Equipped = self.itemObject.Equipped:Connect(function()
@@ -101,6 +106,8 @@ function item:CreateHandle(item)
 	item.WeldConstraint.Part0 = item.Plane
 	item.WeldConstraint.Part1 = Handle
 	item.Plane.CanCollide = false
+	
+	print("created")
 
 	return Handle
 end
@@ -120,7 +127,6 @@ function item:Press(player, itemObject)
 	self.Triggered:Disconnect()
 	self.Prompt:Destroy()
 
-	self:CreateHandle(itemObject)
 	self:AssignToItemsActive(player, itemObject)
 end
 
@@ -133,7 +139,7 @@ function item:RemoveFromItemsActive(player, item)
 end
 
 function item:PublishTopic(topicName, player, ...)
-	self._topicEvent:Fire(topicName, self.object.player, ...)	
+	self._topicEvent:Fire(topicName, player, ...)	
 	--print("Published topic: " .. topicName)
 end
 
