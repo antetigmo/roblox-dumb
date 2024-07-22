@@ -10,33 +10,35 @@ local versionN = "1.0.0"
 function guiHandler.new(object, player)
 	guiHandler.instanceNumber += 1
 	local self = setmetatable({}, guiHandler)
-	
+
 	self.object = object
 	self.player = player
 	self.name = "guiHandler"
 	self.instanceID = guiHandler.instanceNumber
-	
+
 	self.inventoryUi = player.PlayerGui.inventoryUi
-	
+	self.slotsUsed = {}
+
 	return self
 end
 
 function guiHandler:Init()
 	self:ConnectAll()
-	self.object.slots = self:AddressSlots()
+	self.slots = self:AddressSlots()
+	print(self.slots)
 end
 
 function guiHandler:ConnectAll()
-	
-	self.PromptPressedConnection = self.object:m_SubscribeTopic("Pressed", function(player, item, icon)
+	self.PromptPressedConnection = self.object:m_SubscribeTopic("Pressed", function(player, item, instanceID)
 		if player == self.player then
-			self:SetIcon(item, icon)
+			--self.actualItemInstanceID = instanceID
+			self:SetIcon(item)
 		end
 	end)
-	
-	self.MouseClickedConnection = ClientToServer.OnServerEvent:Connect(function(player, slot, amountOfSlots)
+
+	self.MouseClickedConnection = ClientToServer.OnServerEvent:Connect(function(player, slot)
 		if player == self.player then
-			self:OnMouseClicked(player, slot, amountOfSlots)
+			self:OnMouseClicked(player, slot)
 			--self.object.slots = amountOfSlots
 		end
 	end)
@@ -54,7 +56,10 @@ function guiHandler:AddressSlots() -- temporary function, need to re-do,
 	for _, slot in pairs(slotsChildren) do
 		if slot:IsA("Frame") then
 			index +=1
-			amountOfSlots[index] = slot
+			amountOfSlots[index] = {slot}
+			-- CADA SLOT QUANDO PREENCHIDO VAI TER O INSTANCEID QUE É O COMPONENTE ITEM, E O NOME DO ITEM QUE ESTÁ LA
+			-- ASSIM A FUNÇÃO ONMOUSECLICKED VAI USAR O INSTANCEID DO ITEM PRA PROCURAR O COMPONENTE E USAR A FUNÇÃO CREATEHANDLE DO COMPONENTE CERTO.
+			-- OU SEJA, PROCURAR O ITEM NO SLOT E DEPOIS USAR A FUNÇÃO DO COMPONENTE COM INSTANCEID DELE.
 		end
 	end
 
@@ -62,7 +67,7 @@ function guiHandler:AddressSlots() -- temporary function, need to re-do,
 end
 
 function guiHandler:CheckAvailableFrame()
-	for i, availableSlot in ipairs(self.object.slots) do
+	for i, availableSlot in ipairs(self.slots) do
 		if availableSlot:FindFirstChildWhichIsA("ImageLabel") then
 			--warn("Found an image label")
 		else
@@ -73,12 +78,11 @@ end
 
 function guiHandler:SetIcon(item, icon)
 	local availableSlot = self:CheckAvailableFrame()
-	icon.Parent = availableSlot
 end
 
-function guiHandler:OnMouseClicked(player, slot, amountOfSlots)
-	print(slot)
-	print(self.object)
+function guiHandler:OnMouseClicked(player, slot)
+	--print(self.actualItemInstanceID)
+	--self.object.Components.item[instanceID]:CreateHandle(item)
 end
 
 warn("InventoryUi version:", versionN)
