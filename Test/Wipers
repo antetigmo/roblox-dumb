@@ -1,1 +1,331 @@
+using System;
+using System.Collections;
+using HutongGames.PlayMaker;
+using MSCLoader;
+using UnityEngine;
 
+namespace Panier250
+{
+	// Token: 0x02000041 RID: 65
+	public class Wipers : MonoBehaviour
+	{
+		// Token: 0x060000EF RID: 239 RVA: 0x0000A60C File Offset: 0x0000880C
+		private void Start()
+		{
+			this.interactIcon = FsmVariables.GlobalVariables.FindFsmBool("GUIuse");
+			this.interactText = FsmVariables.GlobalVariables.FindFsmString("GUIinteraction");
+			this.sfx.clip = GameObject.Find("MasterAudio/CarFoley/wiper_loop").GetComponent<AudioSource>().clip;
+			this.sfx.volume = 1f;
+			this.sfx.pitch = 2.2f;
+			base.StartCoroutine(this.SetupScr());
+		}
+
+		// Token: 0x060000F0 RID: 240 RVA: 0x0000A694 File Offset: 0x00008894
+		private void Update()
+		{
+			this.delay -= Time.deltaTime;
+			this.delay = Mathf.Clamp(this.delay, 0f, 1f);
+			bool hit = this.raycast.GetHit(this.trig);
+			if (hit)
+			{
+				this.interactIcon.Value = true;
+				this.interactText.Value = "WIPERS";
+				this.mouseover = true;
+				bool flag = Input.GetMouseButtonDown(0) && this.delay <= 0f;
+				if (flag)
+				{
+					this.WiperState++;
+					bool flag2 = this.WiperState > 3;
+					if (flag2)
+					{
+						this.WiperState = 0;
+					}
+					this.S_ON.Play();
+					this.delay = 0.05f;
+				}
+				bool mouseButtonDown = Input.GetMouseButtonDown(1);
+				if (mouseButtonDown)
+				{
+					this.RotY = 11f;
+					this.wash = true;
+					bool flag3 = this.sys.ignition.KeyInIgnition && !this.sys.water.inWater;
+					if (flag3)
+					{
+						this.wash1.Play();
+					}
+					this.washc = base.StartCoroutine(this.Spray());
+				}
+			}
+			else
+			{
+				bool flag4 = this.mouseover;
+				if (flag4)
+				{
+					this.interactIcon.Value = false;
+					this.interactText.Value = "";
+					this.mouseover = false;
+				}
+			}
+			bool flag5 = this.drivetrigger.PlayerInDrivingmode && cInput.GetButtonDown("Wipers") && this.delay <= 0f;
+			if (flag5)
+			{
+				this.WiperState++;
+				bool flag6 = this.WiperState > 3;
+				if (flag6)
+				{
+					this.WiperState = 0;
+				}
+				this.S_ON.Play();
+				this.delay = 0.05f;
+			}
+			bool flag7 = this.wash && Input.GetMouseButtonUp(1);
+			if (flag7)
+			{
+				this.wash = false;
+				this.RotY = 0f;
+				this.wash1.Stop();
+				bool flag8 = this.washc != null;
+				if (flag8)
+				{
+					base.StopCoroutine(this.washc);
+				}
+				bool flag9 = this.c2 == null;
+				if (flag9)
+				{
+					this.c2 = base.StartCoroutine(this.again());
+				}
+			}
+			bool flag10 = this.wash && this.WiperState == 0 && this.sys.ignition.KeyInIgnition && !this.sys.water.inWater;
+			if (flag10)
+			{
+				bool flag11 = !this.wash1.isPlaying;
+				if (flag11)
+				{
+					this.wash1.Play();
+				}
+				bool flag12 = !this.anim.isPlaying;
+				if (flag12)
+				{
+					this.anim.Play();
+					bool flag13 = this.anim["wiper"].speed != 1f;
+					if (flag13)
+					{
+						this.anim["wiper"].speed = 1f;
+						this.sfx.pitch = 2.2f;
+					}
+					this.wiperdelay = 0f;
+				}
+			}
+			this.stalk.localEulerAngles = new Vector3(this.WiperStalkRot[this.WiperState], this.RotY, 0f);
+			bool flag14 = this.raincrap.ws != null && this.sys.ignition.KeyInIgnition && !this.sys.water.inWater;
+			if (flag14)
+			{
+				switch (this.WiperState)
+				{
+				case 0:
+				{
+					bool flag15 = this.anim["wiper"].time == 0f && this.anim.isPlaying && !this.wash && !this.stop1;
+					if (flag15)
+					{
+						this.anim.Stop();
+					}
+					break;
+				}
+				case 1:
+				{
+					bool flag16 = !this.anim.isPlaying && this.wiperdelay >= 2.5f;
+					if (flag16)
+					{
+						this.anim.Play();
+						bool flag17 = this.anim["wiper"].speed != 1f;
+						if (flag17)
+						{
+							this.anim["wiper"].speed = 1f;
+							this.sfx.pitch = 2.2f;
+						}
+						this.wiperdelay = 0f;
+					}
+					break;
+				}
+				case 2:
+				{
+					bool flag18 = !this.anim.isPlaying;
+					if (flag18)
+					{
+						this.anim.Play();
+						bool flag19 = this.anim["wiper"].speed != 1f;
+						if (flag19)
+						{
+							this.anim["wiper"].speed = 1f;
+							this.sfx.pitch = 2.2f;
+						}
+						this.wiperdelay = 0f;
+					}
+					break;
+				}
+				case 3:
+				{
+					bool flag20 = !this.anim.isPlaying;
+					if (flag20)
+					{
+						this.anim.Play();
+						bool flag21 = this.anim["wiper"].speed != 1.33f;
+						if (flag21)
+						{
+							this.anim["wiper"].speed = 1.33f;
+							this.sfx.pitch = 2.4f;
+						}
+						this.wiperdelay = 0f;
+					}
+					break;
+				}
+				}
+			}
+			else
+			{
+				bool flag22 = this.anim["wiper"].time == 0f && this.anim.isPlaying;
+				if (flag22)
+				{
+					this.anim.Stop();
+				}
+			}
+			bool flag23 = this.wiperdelay < 3f;
+			if (flag23)
+			{
+				this.wiperdelay += Time.deltaTime;
+			}
+		}
+
+		// Token: 0x060000F1 RID: 241 RVA: 0x0000ACBB File Offset: 0x00008EBB
+		private IEnumerator SetupScr()
+		{
+			yield return new WaitForSeconds(5f);
+			bool flag = this.raincrap.ws != null;
+			if (flag)
+			{
+				this.script = PlayMakerExtensions.GetPlayMaker(this.raincrap.ws.gameObject, "Speed");
+			}
+			yield break;
+		}
+
+		// Token: 0x060000F2 RID: 242 RVA: 0x0000ACCA File Offset: 0x00008ECA
+		private IEnumerator Spray()
+		{
+			for (;;)
+			{
+				yield return new WaitForSeconds(this.waits);
+				bool flag = this.script != null && this.wash1.isPlaying;
+				if (flag)
+				{
+					this.script.SendEvent("RADIATOR");
+				}
+			}
+			yield break;
+		}
+
+		// Token: 0x060000F3 RID: 243 RVA: 0x0000ACD9 File Offset: 0x00008ED9
+		private IEnumerator again()
+		{
+			for (;;)
+			{
+				bool flag = !this.anim.isPlaying && this.WiperState == 0 && !this.stop1;
+				if (flag)
+				{
+					break;
+				}
+				yield return null;
+			}
+			this.stop1 = true;
+			this.anim.Play("wiper");
+			bool flag2 = this.anim["wiper"].speed != 1f;
+			if (flag2)
+			{
+				this.anim["wiper"].speed = 1f;
+				this.sfx.pitch = 2.2f;
+			}
+			yield return new WaitForSeconds(0.1f);
+			this.stop1 = false;
+			this.c2 = null;
+			yield break;
+			yield break;
+		}
+
+		// Token: 0x040002A5 RID: 677
+		public InteractionRaycast raycast;
+
+		// Token: 0x040002A6 RID: 678
+		public DriveTrigger drivetrigger;
+
+		// Token: 0x040002A7 RID: 679
+		public Collider trig;
+
+		// Token: 0x040002A8 RID: 680
+		public AudioSource S_ON;
+
+		// Token: 0x040002A9 RID: 681
+		public Transform stalk;
+
+		// Token: 0x040002AA RID: 682
+		private FsmBool interactIcon;
+
+		// Token: 0x040002AB RID: 683
+		private FsmString interactText;
+
+		// Token: 0x040002AC RID: 684
+		private bool mouseover;
+
+		// Token: 0x040002AD RID: 685
+		private float delay;
+
+		// Token: 0x040002AE RID: 686
+		public int WiperState;
+
+		// Token: 0x040002AF RID: 687
+		public RainCrap raincrap;
+
+		// Token: 0x040002B0 RID: 688
+		public StarterSystem sys;
+
+		// Token: 0x040002B1 RID: 689
+		public Animation anim;
+
+		// Token: 0x040002B2 RID: 690
+		private float wiperdelay;
+
+		// Token: 0x040002B3 RID: 691
+		public AudioSource sfx;
+
+		// Token: 0x040002B4 RID: 692
+		private float[] WiperStalkRot = new float[]
+		{
+			0f,
+			10f,
+			17.5f,
+			24f
+		};
+
+		// Token: 0x040002B5 RID: 693
+		private float RotY = 0f;
+
+		// Token: 0x040002B6 RID: 694
+		private bool wash = false;
+
+		// Token: 0x040002B7 RID: 695
+		public AudioSource wash1;
+
+		// Token: 0x040002B8 RID: 696
+		private PlayMakerFSM script;
+
+		// Token: 0x040002B9 RID: 697
+		private float waits = 0.1f;
+
+		// Token: 0x040002BA RID: 698
+		private Coroutine washc;
+
+		// Token: 0x040002BB RID: 699
+		private Coroutine c2;
+
+		// Token: 0x040002BC RID: 700
+		private bool stop1 = false;
+	}
+}
