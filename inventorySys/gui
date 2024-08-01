@@ -25,13 +25,12 @@ end
 function guiHandler:Init()
 	self:ConnectAll()
 	self.slots = self:AddressSlots()
-	print(self.slots)
 end
 
 function guiHandler:ConnectAll()
 	self.PromptPressedConnection = self.object:m_SubscribeTopic("Pressed", function(player, item, instanceID)
 		if player == self.player then
-			--self.actualItemInstanceID = instanceID
+			self.actualItemInstanceID = instanceID
 			self:SetIcon(item)
 		end
 	end)
@@ -68,16 +67,18 @@ end
 
 function guiHandler:CheckAvailableFrame()
 	for i, availableSlot in ipairs(self.slots) do
-		if availableSlot:FindFirstChildWhichIsA("ImageLabel") then
-			--warn("Found an image label")
-		else
-			return availableSlot
+		if not availableSlot[1]:FindFirstChildWhichIsA("ImageLabel") then
+			local data = {availableSlot[i], i}
+			return data
 		end
 	end
 end
 
-function guiHandler:SetIcon(item, icon)
-	local availableSlot = self:CheckAvailableFrame()
+function guiHandler:SetIcon(item)
+	local slotData = self:CheckAvailableFrame()
+	local icon = item.Icon
+	slotData.instanceID = self.actualItemInstanceID
+	icon.Parent = slotData[1]
 end
 
 function guiHandler:OnMouseClicked(player, slot)
