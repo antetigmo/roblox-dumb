@@ -68,7 +68,8 @@ end
 function guiHandler:CheckAvailableFrame()
 	for i, availableSlot in ipairs(self.slots) do
 		if not availableSlot[1]:FindFirstChildWhichIsA("ImageLabel") then
-			local data = {availableSlot[i], i}
+			print("slot is empty, assigning to slot:", i, availableSlot)
+			local data = {availableSlot[1], i}
 			return data
 		end
 	end
@@ -76,13 +77,13 @@ end
 
 function guiHandler:SetIcon(item)
 	local slotData = self:CheckAvailableFrame()
-	local icon = item.Icon
 	slotData.instanceID = self.actualItemInstanceID
-	icon.Parent = slotData[1]
+	local itemIcon = item.Icon
+	itemIcon.Parent = slotData[1]
 end
 
 function guiHandler:OnMouseClicked(player, slot)
-	--print(self.actualItemInstanceID)
+	local instanceID = self.slots
 	--self.object.Components.item[instanceID]:CreateHandle(item)
 end
 
