@@ -17,8 +17,8 @@ function guiHandler.new(object, player)
 	self.instanceID = guiHandler.instanceNumber
 
 	self.inventoryUi = player.PlayerGui.inventoryUi
-	self.slotsUsed = {}
-
+	self.actualInventory = {}
+	
 	return self
 end
 
@@ -31,7 +31,7 @@ function guiHandler:ConnectAll()
 	self.PromptPressedConnection = self.object:m_SubscribeTopic("Pressed", function(player, item, instanceID)
 		if player == self.player then
 			self.actualItemInstanceID = instanceID
-			self:SetIcon(item)
+			self:SetItemOnInventory(item)
 		end
 	end)
 
@@ -56,7 +56,6 @@ function guiHandler:AddressSlots() -- temporary function, need to re-do,
 		if slot:IsA("Frame") then
 			index +=1
 			amountOfSlots[index] = {slot}
-			-- CADA SLOT QUANDO PREENCHIDO VAI TER O INSTANCEID QUE É O COMPONENTE ITEM, E O NOME DO ITEM QUE ESTÁ LA
 			-- ASSIM A FUNÇÃO ONMOUSECLICKED VAI USAR O INSTANCEID DO ITEM PRA PROCURAR O COMPONENTE E USAR A FUNÇÃO CREATEHANDLE DO COMPONENTE CERTO.
 			-- OU SEJA, PROCURAR O ITEM NO SLOT E DEPOIS USAR A FUNÇÃO DO COMPONENTE COM INSTANCEID DELE.
 		end
@@ -68,23 +67,30 @@ end
 function guiHandler:CheckAvailableFrame()
 	for i, availableSlot in ipairs(self.slots) do
 		if not availableSlot[1]:FindFirstChildWhichIsA("ImageLabel") then
-			print("slot is empty, assigning to slot:", i, availableSlot)
+			print("slot is empty, assigning item to slot:", i, availableSlot)
+			
 			local data = {availableSlot[1], i}
 			return data
 		end
 	end
 end
 
-function guiHandler:SetIcon(item)
+function guiHandler:SetItemOnInventory(item)
 	local slotData = self:CheckAvailableFrame()
 	slotData.instanceID = self.actualItemInstanceID
+	slotData.item = item
 	local itemIcon = item.Icon
 	itemIcon.Parent = slotData[1]
+	
+	self.actualInventory[tostring(slotData[1])] = slotData
 end
 
 function guiHandler:OnMouseClicked(player, slot)
-	local instanceID = self.slots
-	--self.object.Components.item[instanceID]:CreateHandle(item)
+	local actualSlotOnInventory = self.actualInventory[tostring(slot.Name)]
+	local instanceID = actualSlotOnInventory.instanceID
+	local item = actualSlotOnInventory.item
+	self.object.Components.item[instanceID]:CreateHandle(item)
+	print(self.object.Components.item[instanceID].itemObject)
 end
 
 warn("InventoryUi version:", versionN)
