@@ -26,11 +26,6 @@ function item.new(object, itemObject)
 	self._topicEvent = Instance.new("BindableEvent")
 
 	self.icon = self.itemObject:FindFirstChildWhichIsA("ImageLabel")
-	
-	self.classMethods = {
-		CreateHandle = function(...) return self:CreateHandle(...) end,
-		DestroyHandle = function(...) return self:DestroyHandle(...) end
-	}
 
 	return self
 end
@@ -46,7 +41,7 @@ function item:ConnectAll()
 		self.object:m_PublishTopic("Pressed", player, self.itemObject, self.instanceID)
 	end)	
 
-	warn("Item prompt trigger connection.")
+	warn("Item trigger connection.")
 
 	self.Equipped = self.itemObject.Equipped:Connect(function()
 		local player = PlayersService:GetPlayerFromCharacter(self.itemObject.Parent) or nil
@@ -107,7 +102,7 @@ function item:CreateHandle(item)
 	item.WeldConstraint.Part1 = Handle
 	item.Plane.CanCollide = false
 	
-	print("created")
+	print("created handle.")
 
 	return Handle
 end
