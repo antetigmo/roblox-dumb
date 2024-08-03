@@ -142,8 +142,4 @@ function inventorySys:m_SubscribeTopic(topicName, callBack)
 	return connection
 end
 
-function inventorySys:m_AdressItemOnSlot(item)
-
-end
-
 return inventorySys
