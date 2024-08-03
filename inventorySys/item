@@ -121,7 +121,8 @@ function item:Press(player, itemObject)
 	--self.object:m_SetItem(player, itemObject)
 	self.Triggered:Disconnect()
 	self.Prompt:Destroy()
-
+	self.itemObject.Parent = player
+	
 	self:AssignToItemsActive(player, itemObject)
 end
 
