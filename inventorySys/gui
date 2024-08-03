@@ -77,20 +77,37 @@ end
 
 function guiHandler:SetItemOnInventory(item)
 	local slotData = self:CheckAvailableFrame()
+	local itemIcon = item.Icon:Clone()
+	
 	slotData.instanceID = self.actualItemInstanceID
 	slotData.item = item
-	local itemIcon = item.Icon
 	itemIcon.Parent = slotData[1]
 	
 	self.actualInventory[tostring(slotData[1])] = slotData
 end
 
+function guiHandler:RemoveItemFromInventory(item)
+	print(self.actualInventory)
+end
+
 function guiHandler:OnMouseClicked(player, slot)
-	local actualSlotOnInventory = self.actualInventory[tostring(slot.Name)]
-	local instanceID = actualSlotOnInventory.instanceID
-	local item = actualSlotOnInventory.item
-	self.object.Components.item[instanceID]:CreateHandle(item)
-	print(self.object.Components.item[instanceID].itemObject)
+	if slot:FindFirstChildWhichIsA("ImageLabel") then
+		local actualSlotOnInventory = self.actualInventory[tostring(slot.Name)]
+		local instanceID = actualSlotOnInventory.instanceID
+		local itemObject = actualSlotOnInventory.item
+		local componentItem = self.object.Components.item[instanceID]
+
+		self.object:m_SetItem(player, itemObject)
+		componentItem:CreateHandle(itemObject)
+
+		slot.Icon:Destroy()
+		self:RemoveItemFromInventory(itemObject)
+		self.object:m_PublishTopic("SlotClicked", player, slot)
+	
+	else
+		--print("no item to click")
+		return nil
+	end
 end
 
 warn("InventoryUi version:", versionN)
