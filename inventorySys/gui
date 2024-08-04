@@ -28,12 +28,18 @@ function guiHandler:Init()
 end
 
 function guiHandler:ConnectAll()
-	self.PromptPressedConnection = self.object:m_SubscribeTopic("Pressed", function(player, item, instanceID)
+	self.Pressed = self.object:m_SubscribeTopic("Pressed", function(player, item, instanceID)
+		self.PressedCallback(player, item, instanceID)
+	end)
+	
+	self.PressedCallback = function(player, item, instanceID)
+		print(player, item, instanceID)
+		print("Pressed connected.")
 		if player == self.player then
 			self.actualItemInstanceID = instanceID
 			self:SetItemOnInventory(item)
 		end
-	end)
+	end
 
 	self.MouseClickedConnection = ClientToServer.OnServerEvent:Connect(function(player, slot)
 		if player == self.player then
@@ -44,7 +50,18 @@ function guiHandler:ConnectAll()
 end
 
 function guiHandler:DisconnectAll()
+	self.Pressed:Disconnect()
 	self.MouseClickedConnection:Disconnect()
+end
+
+function guiHandler:ConnectEvent(event)
+	local eventCallback = event .. "Callback"
+	self[eventCallback]()
+end
+
+function guiHandler:DisconnectEvent(event)
+	self[event]:Disconnect()
+	print("2 - ",event, "Disconnected.")
 end
 
 function guiHandler:AddressSlots() -- temporary function, need to re-do,
@@ -78,6 +95,7 @@ end
 function guiHandler:SetItemOnInventory(item)
 	local slotData = self:CheckAvailableFrame()
 	local itemIcon = item.Icon:Clone()
+	print("setted icon:", itemIcon)
 	
 	slotData.instanceID = self.actualItemInstanceID
 	slotData.item = item
@@ -87,7 +105,7 @@ function guiHandler:SetItemOnInventory(item)
 end
 
 function guiHandler:RemoveItemFromInventory(item)
-	print(self.actualInventory)
+	--print(self.actualInventory)
 end
 
 function guiHandler:OnMouseClicked(player, slot)
@@ -102,8 +120,7 @@ function guiHandler:OnMouseClicked(player, slot)
 
 		slot.Icon:Destroy()
 		self:RemoveItemFromInventory(itemObject)
-		self.object:m_PublishTopic("SlotClicked", player, slot)
-	
+		self.object:m_PublishTopic("SlotClicked", player, slot, self.instanceID)
 	else
 		--print("no item to click")
 		return nil
