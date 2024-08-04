@@ -57,15 +57,16 @@ function item:ConnectAll()
 		end
 	end)
 
-	self.Subscription = self:SubscribeTopic("itemDropped", function(player, item)
-		print("Player:", player, "dropped:", item)
+	self.ItemDropped = self:SubscribeTopic("itemDropped", function(player, item)
+		print("1 - Player:", player, "dropped:", item)
 		if self.itemsActive[player.Name][1] == player then
 			self:DestroyHandle(item)
 			self:DisconnectAll()
 			self:CreatePrompt(item)
 			self:ConnectAll()
 			self.object.currentItemEquipped = {nil, self}
-			print("Player that clicked backspace and dropped is:", player, "and item is:", item)
+			
+			print("2 - Player:", player, "dropped:", item)
 		end
 	end)
 end
@@ -74,7 +75,7 @@ function item:DisconnectAll()
 	self.Triggered:Disconnect()
 	self.Equipped:Disconnect()
 	self.Unequipped:Disconnect()
-	self.Subscription:Disconnect()
+	self.ItemDropped:Disconnect()
 end
 
 
@@ -102,8 +103,6 @@ function item:CreateHandle(item)
 	item.WeldConstraint.Part1 = Handle
 	item.Plane.CanCollide = false
 	
-	print("created handle.")
-
 	return Handle
 end
 
@@ -131,7 +130,7 @@ function item:AssignToItemsActive(player, item)
 end
 
 function item:RemoveFromItemsActive(player, item)
-	table.remove(self.itemsActive[player.Name])
+	--table.remove(self.itemsActive[player.Name])
 end
 
 function item:PublishTopic(topicName, player, ...)
