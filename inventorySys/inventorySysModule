@@ -36,14 +36,23 @@ function inventorySys:m_Init()
 	warn("Inventory initiated, current version:" ,invVersion,"; instanceID:", self.instanceID,"; player:", self.player)
 	self:m_LoadComponents()
 	self:m_AddAll()
-	self:Connect()
+	self:ConnectAll()
 end
 
-function inventorySys:Connect()
+function inventorySys:ConnectAll()
 	--CLIENT TO SERVER 
-	local clientDropped = ClientToServer.OnServerEvent:Connect(function(player)
+	self.clientDropped = ClientToServer.OnServerEvent:Connect(function(player)
 		if player == self.player and self.currentItemEquipped[1] then
 			self:m_Drop(self.currentItemEquipped[1])
+		end
+	end)
+	
+	self.SlotClicked = self:m_SubscribeTopic("SlotClicked", function(player, slot, guiInstanceID)
+		if player == self.player then
+			self.guiInstanceID = guiInstanceID
+			local guiComponent = self.Components.ClassComponents.guiHandler[guiInstanceID]
+			print("1 - Pressed Disconnected.")
+			guiComponent:DisconnectEvent("Pressed")
 		end
 	end)
 end
@@ -65,8 +74,13 @@ function inventorySys:m_Drop(item)
 	item.Parent = game.Workspace
 	item.Plane.CFrame = charCFrame * CFrame.new(0,2,-8) * CFrame.Angles(math.rad(180),0,0)
 
-	local component = self.currentItemEquipped[2]
-	component:PublishTopic("itemDropped", self.player, item)
+	local itemComponent = self.currentItemEquipped[2]
+	itemComponent:RemoveFromItemsActive(self.player, item)
+	itemComponent:PublishTopic("itemDropped", self.player, item)
+	
+	local guiComponent = self.Components.ClassComponents.guiHandler[self.guiInstanceID]
+	guiComponent:ConnectEvent("Pressed")
+	print("Pressed connected.")
 end
 
 function inventorySys:m_LoadComponents()
