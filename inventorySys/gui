@@ -55,8 +55,7 @@ function guiHandler:DisconnectAll()
 end
 
 function guiHandler:ConnectEvent(event)
-	local eventCallback = event .. "Callback"
-	self[eventCallback]()
+	self[event]()
 end
 
 function guiHandler:DisconnectEvent(event)
@@ -64,7 +63,11 @@ function guiHandler:DisconnectEvent(event)
 	print("2 - ",event, "Disconnected.")
 end
 
-function guiHandler:AddressSlots() -- temporary function, need to re-do,
+function guiHandler:ResetEvent(event)
+	
+end
+
+function guiHandler:AddressSlots()
 	local slotsChildren = self.inventoryUi.Main.ScrollingFrame:GetChildren()
 	local amountOfSlots = {}
 	local index = 0
