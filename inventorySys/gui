@@ -18,7 +18,7 @@ function guiHandler.new(object, player)
 
 	self.inventoryUi = player.PlayerGui.inventoryUi
 	self.actualInventory = {}
-	
+
 	return self
 end
 
@@ -29,13 +29,15 @@ end
 
 function guiHandler:ConnectAll()
 	self.Pressed = self.object:m_SubscribeTopic("Pressed", function(player, item, instanceID)
+		print("1 - Pressed connected.")
 		self.PressedCallback(player, item, instanceID)
 	end)
 	
 	self.PressedCallback = function(player, item, instanceID)
 		print(player, item, instanceID)
-		print("Pressed connected.")
+		print("2 - CALLBACK - Pressed connected.")
 		if player == self.player then
+			print(player, "is the correct one")
 			self.actualItemInstanceID = instanceID
 			self:SetItemOnInventory(item)
 		end
@@ -54,17 +56,16 @@ function guiHandler:DisconnectAll()
 	self.MouseClickedConnection:Disconnect()
 end
 
-function guiHandler:ConnectEvent(event)
-	self[event]()
+function guiHandler:ConnectEvent(eventName, player, item, instanceID)
+	self.Pressed = self.object:m_SubscribeTopic(eventName, function(player, item, instanceID)
+		local newEventName = eventName.."Callback"
+		self[newEventName](player, item, instanceID)
+	end)
 end
 
-function guiHandler:DisconnectEvent(event)
-	self[event]:Disconnect()
-	print("2 - ",event, "Disconnected.")
-end
-
-function guiHandler:ResetEvent(event)
-	
+function guiHandler:DisconnectEvent(eventName)
+	self[eventName]:Disconnect()
+	print("2 - ",eventName, "Disconnected.", eventName, "connected status is:", self[eventName].Connected)
 end
 
 function guiHandler:AddressSlots()
@@ -105,6 +106,8 @@ function guiHandler:SetItemOnInventory(item)
 	itemIcon.Parent = slotData[1]
 	
 	self.actualInventory[tostring(slotData[1])] = slotData
+	
+	
 end
 
 function guiHandler:RemoveItemFromInventory(item)
