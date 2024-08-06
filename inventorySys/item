@@ -37,12 +37,11 @@ end
 
 function item:ConnectAll()
 	self.Triggered = self.Prompt.Triggered:Connect(function(player)
+		warn("Prompt triggered.")
 		self:Press(player, self.itemObject)
 		self.object:m_PublishTopic("Pressed", player, self.itemObject, self.instanceID)
 	end)	
-
-	warn("Item trigger connection.")
-
+	
 	self.Equipped = self.itemObject.Equipped:Connect(function()
 		local player = PlayersService:GetPlayerFromCharacter(self.itemObject.Parent) or nil
 		if player == self.object.player then
